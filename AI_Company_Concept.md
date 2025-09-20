@@ -41,9 +41,29 @@ Frontend Agent    Backend Agent
 
 ### Decision Making Process
 1. **AI Agents**: Execute tasks and generate outputs
-2. **Human Oversight**: Review and approve/reject agent decisions
-3. **Decentralized System**: Multiple humans can provide input
-4. **Iteration**: Agents refine based on human feedback
+2. **Token Holder Oversight**: Review and approve/reject agent decisions via web dashboard
+3. **Decentralized System**: Multiple token holders can vote on polls and provide input
+4. **Conflict Resolution**: Escalate to upper hierarchy levels (e.g., Head of Eng for technical conflicts)
+5. **Iteration**: Agents refine based on token holder feedback
+
+### Dual Interface System
+
+#### Token Holder Dashboard
+- **Purpose**: Governance and oversight of AI agents
+- **Features**:
+  - Review and approve/reject agent decisions
+  - Vote on polls for major company decisions
+  - Real-time view of agent activities and current projects
+  - Provide feedback and guidance to AI workforce
+  - Monitor agent performance and outputs
+
+#### Public User Page
+- **Purpose**: Transparency and public engagement
+- **Features**:
+  - Live view of current projects being worked on
+  - Real-time agent activity feed
+  - Public visibility into AI company operations
+  - Showcase of completed work and ongoing initiatives
 
 ### Performance Evaluation
 - **Method**: Upper-level agents evaluate lower-level agents
@@ -62,18 +82,20 @@ Frontend Agent    Backend Agent
 ### Workflow
 1. **Task Assignment**: CEO receives prompt/task
 2. **Delegation**: CEO assigns to appropriate department
-3. **Execution**: Department heads coordinate with specialized agents
+3. **Parallel Execution**: All agents work simultaneously on different tasks
 4. **Development**: Frontend/Backend agents build and deploy
-5. **Review**: Human oversight and feedback
-6. **Iteration**: Agents refine based on feedback
+5. **Token Holder Review**: Token holders review and vote on agent outputs via dashboard
+6. **Conflict Resolution**: Escalate disputes to upper hierarchy levels
+7. **Iteration**: Agents refine based on token holder feedback and votes
 
 ## Key Features
 
 ### Hybrid AI-Human System
-- **AI Agents**: Handle all operational work
-- **Human Oversight**: Final decision-making authority
-- **Decentralized Control**: Multiple humans can provide input
+- **AI Agents**: Handle all operational work in parallel
+- **Token Holder Oversight**: Final decision-making authority via voting system
+- **Decentralized Control**: Multiple token holders can vote and provide input
 - **Scalable**: Can add more agents as needed
+- **Transparent**: Public visibility into all operations
 
 ### Functional Focus
 - **Role-Based**: Each agent has specific functional responsibilities
