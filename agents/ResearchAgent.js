@@ -6,6 +6,13 @@ class ResearchAgent extends ClaudeAgent {
   }
 
   async researchIdea(idea) {
+    console.log('🔍 [RESEARCH AGENT] Starting research for idea:', idea.title);
+    console.log('🔍 [RESEARCH AGENT] Idea details:', {
+      title: idea.title,
+      description: idea.description?.substring(0, 100) + '...',
+      revenue_model: idea.revenue_model?.substring(0, 100) + '...'
+    });
+
     const prompt = `As a market research specialist, analyze this business idea:
 
 Title: ${idea.title}
@@ -45,7 +52,10 @@ Format your response as JSON:
 
     let response;
     try {
+      console.log('🔍 [RESEARCH AGENT] Calling Claude API...');
       response = await this.generateResponse(prompt, 2500);
+      console.log('🔍 [RESEARCH AGENT] Raw Claude response length:', response?.length);
+      console.log('🔍 [RESEARCH AGENT] Raw Claude response preview:', response?.substring(0, 200) + '...');
       
       // Clean the response to handle JSON parsing issues
       let cleanedResponse = response
@@ -54,13 +64,24 @@ Format your response as JSON:
         .replace(/\r/g, '\\r') // Escape carriage returns
         .replace(/\t/g, '\\t'); // Escape tabs
       
+      console.log('🔍 [RESEARCH AGENT] Cleaned response preview:', cleanedResponse?.substring(0, 200) + '...');
+      
       // Try to extract JSON from the response if it's wrapped in markdown
       const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         cleanedResponse = jsonMatch[0];
+        console.log('🔍 [RESEARCH AGENT] Extracted JSON preview:', cleanedResponse?.substring(0, 200) + '...');
       }
       
+      console.log('🔍 [RESEARCH AGENT] Attempting JSON parse...');
       const research = JSON.parse(cleanedResponse);
+      console.log('🔍 [RESEARCH AGENT] Successfully parsed JSON!');
+      console.log('🔍 [RESEARCH AGENT] Research data:', {
+        competitors_count: research.competitors?.length || 0,
+        market_size: research.market_analysis?.market_size || 'N/A',
+        growth_potential: research.market_analysis?.growth_potential || 'N/A',
+        target_audience: research.recommendations?.target_audience || 'N/A'
+      });
       
       await this.logActivity('Conducted market research', { 
         idea_title: idea.title,
@@ -69,11 +90,12 @@ Format your response as JSON:
       
       return research;
     } catch (error) {
-      console.error('Error researching idea:', error);
-      console.error('Raw response:', response);
+      console.error('❌ [RESEARCH AGENT] Error researching idea:', error.message);
+      console.error('❌ [RESEARCH AGENT] Raw response:', response);
+      console.error('❌ [RESEARCH AGENT] Using fallback data...');
       
       // Return fallback research data if JSON parsing fails
-      return { 
+      const fallbackData = { 
         competitors: [
           { name: 'Competitor 1', description: 'Leading competitor in the market', strengths: 'Strong market presence', weaknesses: 'Limited innovation' },
           { name: 'Competitor 2', description: 'Emerging competitor', strengths: 'Innovative approach', weaknesses: 'Small market share' }
@@ -90,6 +112,9 @@ Format your response as JSON:
           target_audience: 'Primary target market'
         }
       };
+      
+      console.log('🔍 [RESEARCH AGENT] Returning fallback data:', fallbackData);
+      return fallbackData;
     }
   }
 }

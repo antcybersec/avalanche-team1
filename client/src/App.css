@@ -450,3 +450,59 @@
     font-size: 2rem;
   }
 }
+
+/* Enhanced Product Display Styles */
+.product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.product-header h5 {
+  margin: 0;
+  font-size: 24px;
+  color: #2d3748;
+  font-weight: 700;
+}
+
+.product-description,
+.product-features,
+.product-market,
+.product-value,
+.product-revenue {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 4px solid #4299e1;
+}
+
+.product-description h6,
+.product-features h6,
+.product-market h6,
+.product-value h6,
+.product-revenue h6 {
+  margin: 0 0 10px 0;
+  color: #2d3748;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.market-details p {
+  margin: 5px 0;
+  color: #4a5568;
+}
+
+.features-list {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.features-list li {
+  margin: 8px 0;
+  color: #4a5568;
+  line-height: 1.5;
+}

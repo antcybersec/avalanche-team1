@@ -34,6 +34,7 @@ db.serialize(() => {
       competitor_analysis TEXT,
       market_opportunity TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (idea_id) REFERENCES ideas (id)
     )
   `);
@@ -49,6 +50,7 @@ db.serialize(() => {
       target_market TEXT,
       status TEXT DEFAULT 'pending',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (idea_id) REFERENCES ideas (id)
     )
   `);

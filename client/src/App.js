@@ -133,6 +133,71 @@ function App() {
     }
   };
 
+  const triggerCMOAndCTO = async (ideaId) => {
+    setLoading(true);
+    setCurrentAgent('CMO & CTO Agents');
+    
+    try {
+      // Trigger CMO Agent
+      setAgentActivity(prev => [...prev, { 
+        agent: 'CMO Agent', 
+        action: 'Developing marketing strategy...', 
+        time: new Date().toLocaleTimeString() 
+      }]);
+      
+      const cmoResponse = await fetch(`http://localhost:5001/api/agents/marketing-strategy/${ideaId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const cmoData = await cmoResponse.json();
+      
+      if (cmoData.success) {
+        setAgentActivity(prev => [...prev, { 
+          agent: 'CMO Agent', 
+          action: `Marketing strategy complete! ${cmoData.strategy.marketing_channels?.length || 0} channels identified`, 
+          time: new Date().toLocaleTimeString() 
+        }]);
+      }
+      
+      // Trigger CTO Agent
+      setAgentActivity(prev => [...prev, { 
+        agent: 'CTO Agent', 
+        action: 'Developing technical strategy...', 
+        time: new Date().toLocaleTimeString() 
+      }]);
+      
+      const ctoResponse = await fetch(`http://localhost:5001/api/agents/technical-strategy/${ideaId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const ctoData = await ctoResponse.json();
+      
+      if (ctoData.success) {
+        setAgentActivity(prev => [...prev, { 
+          agent: 'CTO Agent', 
+          action: `Technical strategy complete! ${Object.keys(ctoData.strategy.technology_stack || {}).length} tech components planned`, 
+          time: new Date().toLocaleTimeString() 
+        }]);
+      }
+      
+      setAgentActivity(prev => [...prev, { 
+        agent: 'System', 
+        action: '🎉 All agents complete! Product ready for development!', 
+        time: new Date().toLocaleTimeString() 
+      }]);
+      
+    } catch (error) {
+      console.error('Error triggering CMO/CTO agents:', error);
+    } finally {
+      setLoading(false);
+      setCurrentAgent(null);
+    }
+  };
+
   const voteOnItem = async (itemType, itemId, vote, feedback = '') => {
     try {
       const response = await fetch('http://localhost:5001/api/tokens/vote', {
@@ -173,6 +238,11 @@ function App() {
               developProduct(itemId);
             }
           }, 1000);
+          
+          // Auto-trigger CMO and CTO agents after product approval
+          setTimeout(() => {
+            triggerCMOAndCTO(itemId);
+          }, 3000);
         }
       }
     } catch (error) {
@@ -317,41 +387,67 @@ function App() {
                 )}
               </div>
 
-              {idea.research && (
+              {idea.research && !idea.product && (
                 <div className="research-section">
-                  <h4>📊 Research Results (Shared with Product Agent):</h4>
-                  <div className="research-summary">
-                    <p><strong>Market Size:</strong> {idea.research.market_analysis?.market_size}</p>
-                    <p><strong>Growth Potential:</strong> {idea.research.market_analysis?.growth_potential}</p>
-                    <p><strong>Competitors Found:</strong> {idea.research.competitors?.length || 0}</p>
-                    <p><strong>Key Opportunities:</strong> {idea.research.market_analysis?.opportunities?.slice(0, 2).join(', ')}</p>
-                    <p><strong>Target Audience:</strong> {idea.research.recommendations?.target_audience}</p>
-                  </div>
+                  <h4>📊 Research Agent Status:</h4>
                   <div className="research-status">
-                    <span className="status-badge">✅ Research Complete - Data Shared</span>
+                    <span className="status-badge">✅ Research Complete - Data Shared with Product Agent</span>
                   </div>
                 </div>
               )}
 
               {idea.product && (
                 <div className="product-section">
-                  <h4>🚀 Product Concept (CEO Approved):</h4>
+                  <h4>🚀 Complete Product Concept (CEO Approved):</h4>
                   <div className="product-details">
-                    <p><strong>Product Name:</strong> {idea.product.product_name}</p>
-                    <p><strong>Description:</strong> {idea.product.product_description}</p>
-                    <p><strong>Core Features:</strong></p>
-                    <ul className="features-list">
-                      {idea.product.features?.slice(0, 5).map((feature, index) => (
-                        <li key={index}>{feature}</li>
-                      ))}
-                    </ul>
-                    {idea.product.features?.length > 5 && (
-                      <p className="more-features">...and {idea.product.features.length - 5} more features</p>
+                    <div className="product-header">
+                      <h5>🎯 {idea.product.product_name}</h5>
+                      <div className="ceo-approval-badge">
+                        <span>✅ CEO Agent Approved</span>
+                      </div>
+                    </div>
+                    
+                    <div className="product-description">
+                      <h6>📝 Product Description:</h6>
+                      <p>{idea.product.product_description}</p>
+                    </div>
+                    
+                    <div className="product-features">
+                      <h6>⚡ Core Features ({idea.product.features?.length || 0}):</h6>
+                      <ul className="features-list">
+                        {idea.product.features?.map((feature, index) => (
+                          <li key={index}>{feature}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div className="product-market">
+                      <h6>🎯 Target Market:</h6>
+                      <div className="market-details">
+                        {typeof idea.product.target_market === 'object' ? (
+                          <>
+                            <p><strong>Primary:</strong> {idea.product.target_market.primary}</p>
+                            <p><strong>Secondary:</strong> {idea.product.target_market.secondary}</p>
+                          </>
+                        ) : (
+                          <p>{idea.product.target_market}</p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {idea.product.value_proposition && (
+                      <div className="product-value">
+                        <h6>💎 Value Proposition:</h6>
+                        <p>{idea.product.value_proposition}</p>
+                      </div>
                     )}
-                  </div>
-                  
-                  <div className="ceo-approval-badge">
-                    <span>✅ CEO Agent Approved</span>
+                    
+                    {idea.product.revenue_model && (
+                      <div className="product-revenue">
+                        <h6>💰 Revenue Model:</h6>
+                        <p>{idea.product.revenue_model}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

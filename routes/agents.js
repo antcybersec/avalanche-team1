@@ -3,12 +3,16 @@ const router = express.Router();
 const CEOAgent = require('../agents/CEOAgent');
 const ResearchAgent = require('../agents/ResearchAgent');
 const ProductAgent = require('../agents/ProductAgent');
+const CMOAgent = require('../agents/CMOAgent');
+const CTOAgent = require('../agents/CTOAgent');
 const db = require('../database/setup');
 
 // Initialize agents
 const ceoAgent = new CEOAgent(process.env.CLAUDE_API_KEY);
 const researchAgent = new ResearchAgent(process.env.CLAUDE_API_KEY);
 const productAgent = new ProductAgent(process.env.CLAUDE_API_KEY);
+const cmoAgent = new CMOAgent(process.env.CLAUDE_API_KEY);
+const ctoAgent = new CTOAgent(process.env.CLAUDE_API_KEY);
 
 // Generate ideas
 router.post('/generate-ideas', async (req, res) => {
@@ -38,32 +42,53 @@ router.post('/generate-ideas', async (req, res) => {
 router.post('/research/:ideaId', async (req, res) => {
   try {
     const { ideaId } = req.params;
+    console.log('🔍 [ROUTE] Research endpoint called for idea ID:', ideaId);
     
     // Get idea from database
     db.get('SELECT * FROM ideas WHERE id = ?', [ideaId], async (err, idea) => {
       if (err) {
+        console.error('❌ [ROUTE] Database error:', err);
         return res.status(500).json({ success: false, error: err.message });
       }
       
       if (!idea) {
+        console.error('❌ [ROUTE] Idea not found for ID:', ideaId);
         return res.status(404).json({ success: false, error: 'Idea not found' });
       }
       
+      console.log('🔍 [ROUTE] Found idea:', {
+        id: idea.id,
+        title: idea.title,
+        description: idea.description?.substring(0, 100) + '...'
+      });
+      
+      console.log('🔍 [ROUTE] Calling Research Agent...');
       const research = await researchAgent.researchIdea(idea);
+      console.log('🔍 [ROUTE] Research Agent returned:', {
+        competitors_count: research.competitors?.length || 0,
+        market_size: research.market_analysis?.market_size || 'N/A',
+        has_recommendations: !!research.recommendations
+      });
       
       // Save research to database
+      console.log('🔍 [ROUTE] Saving research to database...');
       db.run(
         'INSERT INTO research (idea_id, research_data, competitor_analysis, market_opportunity) VALUES (?, ?, ?, ?)',
         [ideaId, JSON.stringify(research), JSON.stringify(research.competitors), JSON.stringify(research.market_analysis)],
         function(err) {
-          if (err) console.error('Error saving research:', err);
+          if (err) {
+            console.error('❌ [ROUTE] Error saving research:', err);
+          } else {
+            console.log('✅ [ROUTE] Research saved successfully');
+          }
         }
       );
       
+      console.log('🔍 [ROUTE] Sending response to client...');
       res.json({ success: true, research });
     });
   } catch (error) {
-    console.error('Error researching idea:', error);
+    console.error('❌ [ROUTE] Error researching idea:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -101,6 +126,86 @@ router.post('/develop-product/:ideaId', async (req, res) => {
     });
   } catch (error) {
     console.error('Error developing product:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Develop marketing strategy
+router.post('/marketing-strategy/:ideaId', async (req, res) => {
+  try {
+    const { ideaId } = req.params;
+    
+    // Get idea, research, and product
+    db.get('SELECT * FROM ideas WHERE id = ?', [ideaId], async (err, idea) => {
+      if (err) {
+        return res.status(500).json({ success: false, error: err.message });
+      }
+      
+      db.get('SELECT * FROM research WHERE idea_id = ? ORDER BY created_at DESC LIMIT 1', [ideaId], async (err, research) => {
+        if (err) {
+          return res.status(500).json({ success: false, error: err.message });
+        }
+        
+        db.get('SELECT * FROM products WHERE idea_id = ? ORDER BY created_at DESC LIMIT 1', [ideaId], async (err, product) => {
+          if (err) {
+            return res.status(500).json({ success: false, error: err.message });
+          }
+          
+          const researchData = research ? JSON.parse(research.research_data) : {};
+          const productData = product ? {
+            ...product,
+            features: JSON.parse(product.features || '[]'),
+            target_market: JSON.parse(product.target_market || '{}')
+          } : {};
+          
+          const strategy = await cmoAgent.developMarketingStrategy(idea, productData, researchData);
+          
+          res.json({ success: true, strategy });
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Error developing marketing strategy:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Develop technical strategy
+router.post('/technical-strategy/:ideaId', async (req, res) => {
+  try {
+    const { ideaId } = req.params;
+    
+    // Get idea, research, and product
+    db.get('SELECT * FROM ideas WHERE id = ?', [ideaId], async (err, idea) => {
+      if (err) {
+        return res.status(500).json({ success: false, error: err.message });
+      }
+      
+      db.get('SELECT * FROM research WHERE idea_id = ? ORDER BY created_at DESC LIMIT 1', [ideaId], async (err, research) => {
+        if (err) {
+          return res.status(500).json({ success: false, error: err.message });
+        }
+        
+        db.get('SELECT * FROM products WHERE idea_id = ? ORDER BY created_at DESC LIMIT 1', [ideaId], async (err, product) => {
+          if (err) {
+            return res.status(500).json({ success: false, error: err.message });
+          }
+          
+          const researchData = research ? JSON.parse(research.research_data) : {};
+          const productData = product ? {
+            ...product,
+            features: JSON.parse(product.features || '[]'),
+            target_market: JSON.parse(product.target_market || '{}')
+          } : {};
+          
+          const strategy = await ctoAgent.developTechnicalStrategy(idea, productData, researchData);
+          
+          res.json({ success: true, strategy });
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Error developing technical strategy:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
