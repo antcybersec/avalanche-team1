@@ -5,6 +5,7 @@ const ResearchAgent = require('../agents/ResearchAgent');
 const ProductAgent = require('../agents/ProductAgent');
 const CMOAgent = require('../agents/CMOAgent');
 const CTOAgent = require('../agents/CTOAgent');
+const HeadOfEngineeringAgent = require('../agents/HeadOfEngineeringAgent');
 const db = require('../database/setup');
 
 // Initialize agents
@@ -13,6 +14,7 @@ const researchAgent = new ResearchAgent(process.env.CLAUDE_API_KEY);
 const productAgent = new ProductAgent(process.env.CLAUDE_API_KEY);
 const cmoAgent = new CMOAgent(process.env.CLAUDE_API_KEY);
 const ctoAgent = new CTOAgent(process.env.CLAUDE_API_KEY);
+const headOfEngineeringAgent = new HeadOfEngineeringAgent(process.env.CLAUDE_API_KEY);
 
 // Generate ideas
 router.post('/generate-ideas', async (req, res) => {
@@ -206,6 +208,61 @@ router.post('/technical-strategy/:ideaId', async (req, res) => {
     });
   } catch (error) {
     console.error('Error developing technical strategy:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Create Bolt prompt for website development
+router.post('/bolt-prompt/:ideaId', async (req, res) => {
+  try {
+    const { ideaId } = req.params;
+    
+    // Get idea, research, product, marketing strategy, and technical strategy
+    db.get('SELECT * FROM ideas WHERE id = ?', [ideaId], async (err, idea) => {
+      if (err) {
+        return res.status(500).json({ success: false, error: err.message });
+      }
+      
+      db.get('SELECT * FROM research WHERE idea_id = ? ORDER BY created_at DESC LIMIT 1', [ideaId], async (err, research) => {
+        if (err) {
+          return res.status(500).json({ success: false, error: err.message });
+        }
+        
+        db.get('SELECT * FROM products WHERE idea_id = ? ORDER BY created_at DESC LIMIT 1', [ideaId], async (err, product) => {
+          if (err) {
+            return res.status(500).json({ success: false, error: err.message });
+          }
+          
+          const researchData = research ? JSON.parse(research.research_data) : {};
+          const productData = product ? {
+            ...product,
+            features: JSON.parse(product.features || '[]'),
+            target_market: JSON.parse(product.target_market || '{}')
+          } : {};
+          
+          // For now, we'll use placeholder marketing and technical strategies
+          // In a real implementation, these would be fetched from the database
+          const marketingStrategy = {
+            brand_positioning: 'Innovative solution for modern problems',
+            key_messages: ['Revolutionary approach', 'User-friendly design'],
+            target_segments: [{ segment: 'Tech professionals', characteristics: 'Innovation-focused' }],
+            marketing_channels: [{ channel: 'Digital Marketing', strategy: 'Online presence' }]
+          };
+          
+          const technicalStrategy = {
+            technology_stack: { frontend: 'React', backend: 'Node.js' },
+            architecture: { overview: 'Modern web architecture' },
+            timeline: { phases: [{ phase: 'Development', duration: '3 months' }] }
+          };
+          
+          const boltPrompt = await headOfEngineeringAgent.createBoltPrompt(idea, productData, researchData, marketingStrategy, technicalStrategy);
+          
+          res.json({ success: true, boltPrompt });
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Error creating Bolt prompt:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

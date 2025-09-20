@@ -135,6 +135,12 @@ Format your response as JSON:
         tech_stack_count: Object.keys(strategy.technology_stack || {}).length
       });
       
+      // Share with Head of Engineering
+      await this.logActivity('Sharing technical strategy with Head of Engineering', { 
+        product_name: product.product_name,
+        strategy_shared: true
+      });
+      
       return strategy;
     } catch (error) {
       console.error('❌ [CTO AGENT] Error developing technical strategy:', error.message);

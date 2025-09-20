@@ -7,6 +7,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [currentAgent, setCurrentAgent] = useState(null);
   const [agentActivity, setAgentActivity] = useState([]);
+  const [marketingStrategy, setMarketingStrategy] = useState(null);
+  const [boltPrompt, setBoltPrompt] = useState(null);
   const [tokenHolderId] = useState('token_holder_' + Math.random().toString(36).substr(2, 9));
 
   // Fetch ideas on component mount
@@ -154,6 +156,7 @@ function App() {
       const cmoData = await cmoResponse.json();
       
       if (cmoData.success) {
+        setMarketingStrategy(cmoData.strategy);
         setAgentActivity(prev => [...prev, { 
           agent: 'CMO Agent', 
           action: `Marketing strategy complete! ${cmoData.strategy.marketing_channels?.length || 0} channels identified`, 
@@ -182,6 +185,21 @@ function App() {
           action: `Technical strategy complete! ${Object.keys(ctoData.strategy.technology_stack || {}).length} tech components planned`, 
           time: new Date().toLocaleTimeString() 
         }]);
+        
+        // Trigger Head of Engineering after CTO completes
+        setTimeout(() => {
+          setAgentActivity(prev => [...prev, { 
+            agent: '🔄 Data Transfer', 
+            action: 'Technical strategy shared with Head of Engineering', 
+            time: new Date().toLocaleTimeString() 
+          }]);
+          setAgentActivity(prev => [...prev, { 
+            agent: 'Head of Engineering', 
+            action: 'Creating Bolt prompt for website development...', 
+            time: new Date().toLocaleTimeString() 
+          }]);
+          createBoltPrompt(ideaId);
+        }, 2000);
       }
       
       setAgentActivity(prev => [...prev, { 
@@ -195,6 +213,39 @@ function App() {
     } finally {
       setLoading(false);
       setCurrentAgent(null);
+    }
+  };
+
+  const createBoltPrompt = async (ideaId) => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/agents/bolt-prompt/${ideaId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setBoltPrompt(data.boltPrompt);
+        setAgentActivity(prev => [...prev, { 
+          agent: 'Head of Engineering', 
+          action: `Bolt prompt created! ${data.boltPrompt.pages_required?.length || 0} pages planned for website`, 
+          time: new Date().toLocaleTimeString() 
+        }]);
+        setAgentActivity(prev => [...prev, { 
+          agent: '🎯 Final Stage', 
+          action: 'Website development prompt ready! Ready to build with Bolt!', 
+          time: new Date().toLocaleTimeString() 
+        }]);
+      }
+    } catch (error) {
+      console.error('Error creating Bolt prompt:', error);
+      setAgentActivity(prev => [...prev, { 
+        agent: 'Head of Engineering', 
+        action: 'Error creating Bolt prompt', 
+        time: new Date().toLocaleTimeString() 
+      }]);
     }
   };
 
@@ -448,6 +499,92 @@ function App() {
                         <p>{idea.product.revenue_model}</p>
                       </div>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {/* Marketing Strategy Section */}
+              {marketingStrategy && (
+                <div className="marketing-strategy-section">
+                  <h4>📢 Marketing Strategy (CMO Agent):</h4>
+                  <div className="marketing-details">
+                    <div className="marketing-positioning">
+                      <h6>🎯 Brand Positioning:</h6>
+                      <p>{marketingStrategy.brand_positioning}</p>
+                    </div>
+                    
+                    {marketingStrategy.key_messages && (
+                      <div className="marketing-messages">
+                        <h6>💬 Key Messages:</h6>
+                        <ul>
+                          {marketingStrategy.key_messages.map((message, index) => (
+                            <li key={index}>{message}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {marketingStrategy.marketing_channels && (
+                      <div className="marketing-channels">
+                        <h6>📺 Marketing Channels:</h6>
+                        <ul>
+                          {marketingStrategy.marketing_channels.map((channel, index) => (
+                            <li key={index}>
+                              <strong>{channel.channel}:</strong> {channel.strategy} ({channel.budget_allocation})
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {marketingStrategy.budget_recommendations && (
+                      <div className="marketing-budget">
+                        <h6>💰 Budget Recommendations:</h6>
+                        <p><strong>Total Budget:</strong> {marketingStrategy.budget_recommendations.total_budget}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Bolt Prompt Section */}
+              {boltPrompt && (
+                <div className="bolt-prompt-section">
+                  <h4>🏗️ Website Development Prompt (Head of Engineering):</h4>
+                  <div className="bolt-details">
+                    <div className="bolt-header">
+                      <h6>📋 Website: {boltPrompt.website_title}</h6>
+                      <p>{boltPrompt.website_description}</p>
+                    </div>
+                    
+                    {boltPrompt.pages_required && (
+                      <div className="bolt-pages">
+                        <h6>📄 Pages Required:</h6>
+                        <ul>
+                          {boltPrompt.pages_required.map((page, index) => (
+                            <li key={index}>{page}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {boltPrompt.functional_requirements && (
+                      <div className="bolt-features">
+                        <h6>⚙️ Functional Requirements:</h6>
+                        <ul>
+                          {boltPrompt.functional_requirements.map((feature, index) => (
+                            <li key={index}>{feature}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    <div className="bolt-prompt">
+                      <h6>🚀 Bolt Prompt:</h6>
+                      <div className="prompt-text">
+                        {boltPrompt.bolt_prompt}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
