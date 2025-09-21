@@ -257,7 +257,34 @@ router.post('/bolt-prompt/:ideaId', async (req, res) => {
           
           const boltPrompt = await headOfEngineeringAgent.createBoltPrompt(idea, productData, researchData, marketingStrategy, technicalStrategy);
           
-          res.json({ success: true, boltPrompt });
+          // Save bolt prompt to database
+          const stmt = db.prepare(`
+            INSERT INTO bolt_prompts (
+              idea_id, website_title, website_description, pages_required,
+              functional_requirements, design_guidelines, integration_needs, bolt_prompt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `);
+          
+          stmt.run([
+            ideaId,
+            boltPrompt.website_title || '',
+            boltPrompt.website_description || '',
+            JSON.stringify(boltPrompt.pages_required || []),
+            JSON.stringify(boltPrompt.functional_requirements || []),
+            boltPrompt.design_guidelines || '',
+            JSON.stringify(boltPrompt.integration_needs || []),
+            boltPrompt.bolt_prompt || ''
+          ], function(err) {
+            if (err) {
+              console.error('Error saving bolt prompt:', err);
+              return res.status(500).json({ success: false, error: err.message });
+            }
+            
+            console.log(`Bolt prompt saved for idea ${ideaId}, prompt ID: ${this.lastID}`);
+            res.json({ success: true, boltPrompt });
+          });
+          
+          stmt.finalize();
         });
       });
     });

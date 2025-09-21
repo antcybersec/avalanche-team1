@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 function App() {
@@ -9,7 +9,22 @@ function App() {
   const [agentActivity, setAgentActivity] = useState([]);
   const [marketingStrategy, setMarketingStrategy] = useState(null);
   const [boltPrompt, setBoltPrompt] = useState(null);
+  const [showBoltModal, setShowBoltModal] = useState(false);
   const [tokenHolderId] = useState('token_holder_' + Math.random().toString(36).substr(2, 9));
+  const boltWindowRef = useRef(null);
+
+  // Helper function to safely format target market segments
+  const formatSegment = (val) => {
+    if (!val) return 'N/A';
+    if (typeof val === 'string') return val;
+    if (Array.isArray(val)) return val.join(', ');
+    if (typeof val === 'object') {
+      if (val.segment) return val.segment;
+      if (val.segments) return Array.isArray(val.segments) ? val.segments.join(', ') : String(val.segments);
+      return Object.values(val).filter(v => typeof v === 'string').join(', ') || 'N/A';
+    }
+    return String(val);
+  };
 
   // Fetch ideas on component mount
   useEffect(() => {
@@ -238,6 +253,22 @@ function App() {
           action: 'Website development prompt ready! Ready to build with Bolt!', 
           time: new Date().toLocaleTimeString() 
         }]);
+        
+        // Automatically open Developer Agent (Bolt) in a new tab now that prompt is ready
+        try {
+          openBoltNewTab();
+          setAgentActivity(prev => [...prev, { 
+            agent: '🚀 System', 
+            action: 'Opening Developer Agent in a new tab with website prompt...', 
+            time: new Date().toLocaleTimeString() 
+          }]);
+        } catch (e) {
+          setAgentActivity(prev => [...prev, { 
+            agent: '🚀 System', 
+            action: 'Popup blocked. Click "Open in Developer Agent" to continue.', 
+            time: new Date().toLocaleTimeString() 
+          }]);
+        }
       }
     } catch (error) {
       console.error('Error creating Bolt prompt:', error);
@@ -247,6 +278,50 @@ function App() {
         time: new Date().toLocaleTimeString() 
       }]);
     }
+  };
+
+  const getBoltUrl = () => {
+    const promptText = boltPrompt?.bolt_prompt ||
+      'Build a modern, responsive website. Include homepage, features, pricing, about, contact pages.';
+    const params = new URLSearchParams({
+      prompt: promptText,
+      autostart: '1',
+    });
+    return `http://localhost:5173/?${params.toString()}`;
+  };
+
+  const openBoltNewTab = () => {
+    const url = getBoltUrl();
+    // If we pre-opened a placeholder window, navigate it; else open a fresh tab
+    if (boltWindowRef.current && !boltWindowRef.current.closed) {
+      try {
+        boltWindowRef.current.location.href = url;
+        return;
+      } catch (_) {
+        // Fallback to opening a new tab
+      }
+    }
+    window.open(url, '_blank', 'noopener');
+  };
+
+  const openBoltWithPrompt = () => {
+    // If no boltPrompt exists, create a fallback one
+    if (!boltPrompt) {
+      const fallbackPrompt = {
+        website_title: "AI Health Guardian Website",
+        website_description: "A modern, responsive website for the AI Health Guardian platform",
+        bolt_prompt: "Build a modern, responsive healthcare website for AI Health Guardian - a personalized AI health monitoring system. Include homepage, features page, pricing, about us, and contact pages. Use a clean, medical-themed design with blue and green colors. Include sections for: hero banner, features showcase, testimonials, pricing plans, and contact form. Make it mobile-responsive and professional."
+      };
+      setBoltPrompt(fallbackPrompt);
+    }
+    
+    // Prefer opening a new tab for Developer Agent to avoid cross-origin isolation issues
+    openBoltNewTab();
+    setAgentActivity(prev => [...prev, { 
+      agent: '🚀 System', 
+      action: 'Opening Developer Agent (new tab) with website prompt...', 
+      time: new Date().toLocaleTimeString() 
+    }]);
   };
 
   const voteOnItem = async (itemType, itemId, vote, feedback = '') => {
@@ -341,6 +416,12 @@ function App() {
             className="refresh-btn"
           >
             🔄 Refresh Data
+          </button>
+          <button 
+            onClick={openBoltWithPrompt}
+            className="test-bolt-btn"
+          >
+            🚀 Test Bolt Integration
           </button>
         </div>
 
@@ -472,19 +553,19 @@ function App() {
                       </ul>
                     </div>
                     
-                    <div className="product-market">
-                      <h6>🎯 Target Market:</h6>
-                      <div className="market-details">
-                        {typeof idea.product.target_market === 'object' ? (
-                          <>
-                            <p><strong>Primary:</strong> {idea.product.target_market.primary}</p>
-                            <p><strong>Secondary:</strong> {idea.product.target_market.secondary}</p>
-                          </>
-                        ) : (
-                          <p>{idea.product.target_market}</p>
-                        )}
-                      </div>
-                    </div>
+        <div className="product-market">
+          <h6>🎯 Target Market:</h6>
+          <div className="market-details">
+            {typeof idea.product.target_market === 'object' ? (
+              <>
+                <p><strong>Primary:</strong> {formatSegment(idea.product.target_market.primary)}</p>
+                <p><strong>Secondary:</strong> {formatSegment(idea.product.target_market.secondary)}</p>
+              </>
+            ) : (
+              <p>{formatSegment(idea.product.target_market)}</p>
+            )}
+          </div>
+        </div>
                     
                     {idea.product.value_proposition && (
                       <div className="product-value">
@@ -586,6 +667,57 @@ function App() {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Build Website Button */}
+                  <div className="build-website-section">
+                    <button 
+                      className="build-website-btn"
+                      onClick={openBoltWithPrompt}
+                    >
+                      🚀 Build Website with Developer Agent
+                    </button>
+                    <p className="build-website-desc">
+                      Click to open the Developer Agent (Bolt) with this prompt and start building your website!
+                    </p>
+                  </div>
+                  
+                  {/* Inline Bolt Development Section */}
+                  {showBoltModal && boltPrompt && (
+                    <div className="bolt-development-section">
+                      <div className="bolt-section-header">
+                        <h4>🚀 Developer Agent - Website Development</h4>
+                        <button 
+                          className="close-bolt-btn"
+                          onClick={() => setShowBoltModal(false)}
+                        >
+                          ✕ Close
+                        </button>
+                      </div>
+                      
+                      <div className="bolt-section-content">
+                        <div className="bolt-prompt-info">
+                          <h5>📋 Building: {boltPrompt.website_title}</h5>
+                          <p>{boltPrompt.website_description}</p>
+                          <div className="bolt-prompt-display">
+                            <strong>Prompt sent to Developer Agent:</strong>
+                            <div className="prompt-box">
+                              {boltPrompt.bolt_prompt}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="bolt-iframe-container">
+                          <iframe
+                            src={`http://localhost:5173/?prompt=${encodeURIComponent(boltPrompt.bolt_prompt)}`}
+                            title="Developer Agent - Bolt.diy"
+                            className="bolt-iframe"
+                            allow="clipboard-read; clipboard-write; cross-origin-isolated; shared-array-buffer"
+                            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -598,6 +730,7 @@ function App() {
           </div>
         )}
       </main>
+
     </div>
   );
 }

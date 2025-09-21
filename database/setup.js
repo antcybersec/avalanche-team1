@@ -78,6 +78,24 @@ db.serialize(() => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Bolt prompts table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS bolt_prompts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      idea_id INTEGER,
+      website_title TEXT,
+      website_description TEXT,
+      pages_required TEXT,
+      functional_requirements TEXT,
+      design_guidelines TEXT,
+      integration_needs TEXT,
+      bolt_prompt TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (idea_id) REFERENCES ideas (id)
+    )
+  `);
 });
 
 console.log('Database initialized successfully');

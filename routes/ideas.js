@@ -37,22 +37,35 @@ router.get('/:id', (req, res) => {
           return res.status(500).json({ success: false, error: err.message });
         }
         
-        res.json({ 
-          success: true, 
-          idea: {
-            ...idea,
-            research: research ? {
-              ...research,
-              research_data: JSON.parse(research.research_data || '{}'),
-              competitor_analysis: JSON.parse(research.competitor_analysis || '[]'),
-              market_opportunity: JSON.parse(research.market_opportunity || '{}')
-            } : null,
-            product: product ? {
-              ...product,
-              features: JSON.parse(product.features || '[]'),
-              target_market: JSON.parse(product.target_market || '{}')
-            } : null
+        // Get bolt prompt for this idea
+        db.get('SELECT * FROM bolt_prompts WHERE idea_id = ? ORDER BY created_at DESC LIMIT 1', [id], (err, boltPrompt) => {
+          if (err) {
+            return res.status(500).json({ success: false, error: err.message });
           }
+          
+          res.json({ 
+            success: true, 
+            idea: {
+              ...idea,
+              research: research ? {
+                ...research,
+                research_data: JSON.parse(research.research_data || '{}'),
+                competitor_analysis: JSON.parse(research.competitor_analysis || '[]'),
+                market_opportunity: JSON.parse(research.market_opportunity || '{}')
+              } : null,
+              product: product ? {
+                ...product,
+                features: JSON.parse(product.features || '[]'),
+                target_market: JSON.parse(product.target_market || '{}')
+              } : null,
+              boltPrompt: boltPrompt ? {
+                ...boltPrompt,
+                pages_required: JSON.parse(boltPrompt.pages_required || '[]'),
+                functional_requirements: JSON.parse(boltPrompt.functional_requirements || '[]'),
+                integration_needs: JSON.parse(boltPrompt.integration_needs || '[]')
+              } : null
+            }
+          });
         });
       });
     });
