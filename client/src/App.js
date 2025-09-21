@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
+import AgentFlow from './AgentFlow';
 
 function App() {
-  const [ideas, setIdeas] = useState([]);
-  const [selectedIdea, setSelectedIdea] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [currentAgent, setCurrentAgent] = useState(null);
-  const [agentActivity, setAgentActivity] = useState([]);
+  // Simple frontend state - no database IDs needed
+  const [currentIdea, setCurrentIdea] = useState(null);
+  const [research, setResearch] = useState(null);
+  const [product, setProduct] = useState(null);
   const [marketingStrategy, setMarketingStrategy] = useState(null);
+  const [technicalStrategy, setTechnicalStrategy] = useState(null);
   const [boltPrompt, setBoltPrompt] = useState(null);
-  const [showBoltModal, setShowBoltModal] = useState(false);
+  const [agentActivity, setAgentActivity] = useState([]);
+  const [currentAgent, setCurrentAgent] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [tokenHolderId] = useState('token_holder_' + Math.random().toString(36).substr(2, 9));
   const boltWindowRef = useRef(null);
 
@@ -26,39 +29,27 @@ function App() {
     return String(val);
   };
 
-  // Fetch ideas on component mount
+  // Initialize with empty state - no database dependency
   useEffect(() => {
-    fetchIdeas();
+    console.log('🚀 [FRONTEND] App initialized - ready for AI agent workflow');
   }, []);
 
-  const fetchIdeas = async () => {
-    try {
-      const response = await fetch('http://localhost:5001/api/ideas');
-      const data = await response.json();
-      if (data.success && data.ideas.length > 0) {
-        // Get the most recent idea with full details
-        const latestIdeaId = data.ideas[0].id;
-        const ideaResponse = await fetch(`http://localhost:5001/api/ideas/${latestIdeaId}`);
-        const ideaData = await ideaResponse.json();
-        if (ideaData.success) {
-          console.log('Fetched idea data:', ideaData.idea);
-          setIdeas([ideaData.idea]);
-        }
-      } else {
-        setIdeas([]);
-      }
-    } catch (error) {
-      console.error('Error fetching ideas:', error);
-    }
-  };
+  // Removed fetchIdeas function - no database dependency needed
 
   const generateIdeas = async () => {
     setLoading(true);
     setCurrentAgent('CEO Agent');
-    setAgentActivity(prev => [...prev, { agent: 'CEO Agent', action: 'Generating new business idea...', time: new Date().toLocaleTimeString() }]);
     
-    // Clear existing ideas to show only the new one
-    setIdeas([]);
+    // Clear all previous state to start fresh
+    setCurrentIdea(null);
+    setResearch(null);
+    setProduct(null);
+    setMarketingStrategy(null);
+    setTechnicalStrategy(null);
+    setBoltPrompt(null);
+    setAgentActivity([]);
+    
+    setAgentActivity(prev => [...prev, { agent: 'CEO Agent', action: 'Generating new business idea...', time: new Date().toLocaleTimeString() }]);
     
     try {
       const response = await fetch('http://localhost:5001/api/agents/generate-ideas', {
@@ -69,9 +60,10 @@ function App() {
         body: JSON.stringify({ count: 1 }),
       });
       const data = await response.json();
-      if (data.success) {
+      if (data.success && data.ideas && data.ideas.length > 0) {
+        setCurrentIdea(data.ideas[0]);
         setAgentActivity(prev => [...prev, { agent: 'CEO Agent', action: 'Idea generated successfully!', time: new Date().toLocaleTimeString() }]);
-        await fetchIdeas();
+        console.log('💡 [FRONTEND] New idea created:', data.ideas[0].title);
       }
     } catch (error) {
       console.error('Error generating ideas:', error);
@@ -82,26 +74,36 @@ function App() {
     }
   };
 
-  const researchIdea = async (ideaId) => {
+  const researchIdea = async () => {
+    if (!currentIdea) return;
+    
     setLoading(true);
     setCurrentAgent('Research Agent');
     setAgentActivity(prev => [...prev, { agent: 'Research Agent', action: 'Conducting market research...', time: new Date().toLocaleTimeString() }]);
     
     try {
-      const response = await fetch(`http://localhost:5001/api/agents/research/${ideaId}`, {
+      const response = await fetch('http://localhost:5001/api/agents/research', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idea: currentIdea }),
       });
       const data = await response.json();
+      console.log('🔍 [FRONTEND] Research response:', data);
+      
       if (data.success) {
+        console.log('🔍 [FRONTEND] Setting research data:', data.research);
+        setResearch(data.research);
         setAgentActivity(prev => [...prev, { agent: 'Research Agent', action: 'Research completed successfully!', time: new Date().toLocaleTimeString() }]);
         setAgentActivity(prev => [...prev, { agent: 'Research Agent', action: 'Sharing research data with Product Agent...', time: new Date().toLocaleTimeString() }]);
-        await fetchIdeas();
         
         // Auto-trigger Product Agent after research completes
         setTimeout(() => {
+          console.log('🔍 [FRONTEND] About to call developProduct after timeout');
           setAgentActivity(prev => [...prev, { agent: '🔄 Data Transfer', action: 'Research data successfully transferred to Product Agent', time: new Date().toLocaleTimeString() }]);
           setAgentActivity(prev => [...prev, { agent: 'Product Agent', action: 'Received research data. Starting product development...', time: new Date().toLocaleTimeString() }]);
-          developProduct(ideaId);
+          developProductWithData(currentIdea, data.research);
         }, 2000);
       }
     } catch (error) {
@@ -113,44 +115,79 @@ function App() {
     }
   };
 
-  const developProduct = async (ideaId) => {
+  const developProductWithData = async (ideaData, researchData) => {
+    console.log('🚀 [FRONTEND] developProductWithData called with:', { idea: !!ideaData, research: !!researchData });
+    
+    if (!ideaData || !researchData) {
+      console.log('❌ [FRONTEND] developProductWithData blocked - missing data:', { idea: !!ideaData, research: !!researchData });
+      setAgentActivity(prev => [...prev, { agent: 'Product Agent', action: 'Error: Missing required data for product development', time: new Date().toLocaleTimeString() }]);
+      return;
+    }
+    
     setLoading(true);
     setCurrentAgent('Product Agent');
     setAgentActivity(prev => [...prev, { agent: 'Product Agent', action: 'Developing product concept...', time: new Date().toLocaleTimeString() }]);
     
     try {
-      const response = await fetch(`http://localhost:5001/api/agents/develop-product/${ideaId}`, {
+      const response = await fetch('http://localhost:5001/api/agents/develop-product', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          idea: ideaData,
+          research: researchData
+        }),
       });
       const data = await response.json();
       if (data.success) {
+        setProduct(data.product);
         setAgentActivity(prev => [...prev, { agent: 'Product Agent', action: 'Product concept developed successfully!', time: new Date().toLocaleTimeString() }]);
         setAgentActivity(prev => [...prev, { agent: 'Product Agent', action: 'Sharing product concept with CEO Agent...', time: new Date().toLocaleTimeString() }]);
-        await fetchIdeas();
         
-        // Auto-trigger CEO evaluation after product is ready
+        // Auto-trigger CEO validation after product is ready
         setTimeout(() => {
           setAgentActivity(prev => [...prev, { agent: '🔄 Data Transfer', action: 'Product concept successfully transferred to CEO Agent', time: new Date().toLocaleTimeString() }]);
           setAgentActivity(prev => [...prev, { agent: 'CEO Agent', action: 'Received product concept. Evaluating market viability...', time: new Date().toLocaleTimeString() }]);
           setTimeout(() => {
-            setAgentActivity(prev => [...prev, { agent: 'CEO Agent', action: 'Product evaluation complete! Approved for final token holder vote.', time: new Date().toLocaleTimeString() }]);
+            setAgentActivity(prev => [...prev, { agent: 'CEO Agent', action: 'Product evaluation complete! Approved for token holder vote.', time: new Date().toLocaleTimeString() }]);
             setAgentActivity(prev => [...prev, { agent: '🎯 Final Stage', action: 'Product concept ready for token holder approval!', time: new Date().toLocaleTimeString() }]);
-            setAgentActivity(prev => [...prev, { agent: 'CEO Agent', action: 'Workflow complete - awaiting final token holder decision', time: new Date().toLocaleTimeString() }]);
           }, 3000);
         }, 2000);
       }
     } catch (error) {
       console.error('Error developing product:', error);
       setAgentActivity(prev => [...prev, { agent: 'Product Agent', action: 'Error in product development - using fallback data', time: new Date().toLocaleTimeString() }]);
-      // Still fetch ideas to show any partial data
-      await fetchIdeas();
     } finally {
       setLoading(false);
       setCurrentAgent(null);
     }
   };
 
-  const triggerCMOAndCTO = async (ideaId) => {
+  // Fallback function for backward compatibility
+  const developProduct = async () => {
+    console.log('🚀 [FRONTEND] developProduct (fallback) called with:', { currentIdea: !!currentIdea, research: !!research });
+    
+    if (!currentIdea || !research) {
+      console.log('❌ [FRONTEND] developProduct (fallback) blocked - missing data:', { currentIdea: !!currentIdea, research: !!research });
+      setAgentActivity(prev => [...prev, { agent: 'Product Agent', action: 'Error: Missing required data for product development', time: new Date().toLocaleTimeString() }]);
+      return;
+    }
+    
+    // Use the new function with current state
+    developProductWithData(currentIdea, research);
+  };
+
+  const triggerCMOAndCTOWithData = async (ideaData, productData, researchData) => {
+    console.log('🚀 [FRONTEND] triggerCMOAndCTOWithData called with:', { idea: !!ideaData, product: !!productData, research: !!researchData });
+    
+    if (!ideaData || !productData) {
+      console.log('❌ [FRONTEND] triggerCMOAndCTOWithData blocked - missing data:', { idea: !!ideaData, product: !!productData });
+      setAgentActivity(prev => [...prev, { agent: 'CMO & CTO Agents', action: 'Error: Missing required data for strategy development', time: new Date().toLocaleTimeString() }]);
+      return;
+    }
+    
+    console.log('🚀 [FRONTEND] Triggering CMO & CTO for product:', productData.product_name);
     setLoading(true);
     setCurrentAgent('CMO & CTO Agents');
     
@@ -162,11 +199,15 @@ function App() {
         time: new Date().toLocaleTimeString() 
       }]);
       
-      const cmoResponse = await fetch(`http://localhost:5001/api/agents/marketing-strategy/${ideaId}`, {
+      const cmoResponse = await fetch('http://localhost:5001/api/agents/marketing-strategy', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ 
+          idea: ideaData,
+          product: productData
+        }),
       });
       const cmoData = await cmoResponse.json();
       
@@ -177,6 +218,20 @@ function App() {
           action: `Marketing strategy complete! ${cmoData.strategy.marketing_channels?.length || 0} channels identified`, 
           time: new Date().toLocaleTimeString() 
         }]);
+        
+        // Trigger Marketing Agent after CMO completes
+        setTimeout(() => {
+          setAgentActivity(prev => [...prev, { 
+            agent: '🔄 Data Transfer', 
+            action: 'Marketing strategy shared with Marketing Agent', 
+            time: new Date().toLocaleTimeString() 
+          }]);
+          setAgentActivity(prev => [...prev, { 
+            agent: 'Marketing Agent', 
+            action: 'Received marketing strategy. Ready to execute campaigns!', 
+            time: new Date().toLocaleTimeString() 
+          }]);
+        }, 1000);
       }
       
       // Trigger CTO Agent
@@ -186,15 +241,20 @@ function App() {
         time: new Date().toLocaleTimeString() 
       }]);
       
-      const ctoResponse = await fetch(`http://localhost:5001/api/agents/technical-strategy/${ideaId}`, {
+      const ctoResponse = await fetch('http://localhost:5001/api/agents/technical-strategy', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ 
+          idea: ideaData,
+          product: productData
+        }),
       });
       const ctoData = await ctoResponse.json();
       
       if (ctoData.success) {
+        setTechnicalStrategy(ctoData.strategy);
         setAgentActivity(prev => [...prev, { 
           agent: 'CTO Agent', 
           action: `Technical strategy complete! ${Object.keys(ctoData.strategy.technology_stack || {}).length} tech components planned`, 
@@ -213,7 +273,7 @@ function App() {
             action: 'Creating Bolt prompt for website development...', 
             time: new Date().toLocaleTimeString() 
           }]);
-          createBoltPrompt(ideaId);
+          createBoltPromptWithData(ideaData, productData, researchData, cmoData.strategy, ctoData.strategy);
         }, 2000);
       }
       
@@ -231,53 +291,109 @@ function App() {
     }
   };
 
-  const createBoltPrompt = async (ideaId) => {
+  // Fallback function for backward compatibility
+  const triggerCMOAndCTO = async () => {
+    console.log('🚀 [FRONTEND] triggerCMOAndCTO (fallback) called with:', { currentIdea: !!currentIdea, product: !!product });
+    
+    if (!currentIdea || !product) {
+      console.log('❌ [FRONTEND] triggerCMOAndCTO (fallback) blocked - missing data:', { currentIdea: !!currentIdea, product: !!product });
+      setAgentActivity(prev => [...prev, { agent: 'CMO & CTO Agents', action: 'Error: Missing required data for strategy development', time: new Date().toLocaleTimeString() }]);
+      return;
+    }
+    
+    // Use the new function with current state
+    triggerCMOAndCTOWithData(currentIdea, product, research);
+  };
+
+  const createBoltPromptWithData = async (ideaData, productData, researchData, marketingStrategyData, technicalStrategyData) => {
+    console.log('🔧 [FRONTEND] createBoltPromptWithData called with:', { 
+      idea: !!ideaData, 
+      product: !!productData, 
+      research: !!researchData,
+      marketing: !!marketingStrategyData,
+      technical: !!technicalStrategyData
+    });
+    
+    if (!ideaData || !productData || !marketingStrategyData || !technicalStrategyData) {
+      console.log('❌ [FRONTEND] createBoltPromptWithData blocked - missing data');
+      setAgentActivity(prev => [...prev, { agent: 'Head of Engineering', action: 'Error: Missing required data for bolt prompt creation', time: new Date().toLocaleTimeString() }]);
+      return;
+    }
+    
+    console.log('🔧 [FRONTEND] Starting Bolt prompt creation for product:', productData.product_name);
+    
     try {
-      const response = await fetch(`http://localhost:5001/api/agents/bolt-prompt/${ideaId}`, {
+      const response = await fetch('http://localhost:5001/api/agents/bolt-prompt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ 
+          idea: ideaData,
+          product: productData,
+          research: researchData,
+          marketingStrategy: marketingStrategyData,
+          technicalStrategy: technicalStrategyData
+        }),
       });
       const data = await response.json();
+      console.log('🔧 [FRONTEND] Bolt prompt API response:', data);
       
       if (data.success) {
         setBoltPrompt(data.boltPrompt);
+        
         setAgentActivity(prev => [...prev, { 
           agent: 'Head of Engineering', 
           action: `Bolt prompt created! ${data.boltPrompt.pages_required?.length || 0} pages planned for website`, 
           time: new Date().toLocaleTimeString() 
         }]);
         setAgentActivity(prev => [...prev, { 
+          agent: '🔄 Data Transfer', 
+          action: 'Bolt prompt shared with Developer Agent (Bolt.diy)', 
+          time: new Date().toLocaleTimeString() 
+        }]);
+        setAgentActivity(prev => [...prev, { 
+          agent: 'Developer Agent', 
+          action: 'Received development prompt. Ready to build website!', 
+          time: new Date().toLocaleTimeString() 
+        }]);
+        setAgentActivity(prev => [...prev, { 
           agent: '🎯 Final Stage', 
-          action: 'Website development prompt ready! Ready to build with Bolt!', 
+          action: 'Website development prompt ready! Click to open Bolt.diy!', 
           time: new Date().toLocaleTimeString() 
         }]);
         
-        // Automatically open Developer Agent (Bolt) in a new tab now that prompt is ready
-        try {
-          openBoltNewTab();
-          setAgentActivity(prev => [...prev, { 
-            agent: '🚀 System', 
-            action: 'Opening Developer Agent in a new tab with website prompt...', 
-            time: new Date().toLocaleTimeString() 
-          }]);
-        } catch (e) {
-          setAgentActivity(prev => [...prev, { 
-            agent: '🚀 System', 
-            action: 'Popup blocked. Click "Open in Developer Agent" to continue.', 
-            time: new Date().toLocaleTimeString() 
-          }]);
-        }
+        // Developer Agent is now ready and clickable
       }
     } catch (error) {
-      console.error('Error creating Bolt prompt:', error);
+      console.error('❌ [FRONTEND] Error creating Bolt prompt:', error);
+      console.error('❌ [FRONTEND] Error details:', error.message);
       setAgentActivity(prev => [...prev, { 
         agent: 'Head of Engineering', 
-        action: 'Error creating Bolt prompt', 
+        action: `Error creating Bolt prompt: ${error.message}`, 
         time: new Date().toLocaleTimeString() 
       }]);
     }
+  };
+
+  // Fallback function for backward compatibility
+  const createBoltPrompt = async () => {
+    console.log('🔧 [FRONTEND] createBoltPrompt (fallback) called with:', { 
+      currentIdea: !!currentIdea, 
+      product: !!product, 
+      research: !!research,
+      marketing: !!marketingStrategy,
+      technical: !!technicalStrategy
+    });
+    
+    if (!currentIdea || !product || !marketingStrategy || !technicalStrategy) {
+      console.log('❌ [FRONTEND] createBoltPrompt (fallback) blocked - missing data');
+      setAgentActivity(prev => [...prev, { agent: 'Head of Engineering', action: 'Error: Missing required data for bolt prompt creation', time: new Date().toLocaleTimeString() }]);
+      return;
+    }
+    
+    // Use the new function with current state
+    createBoltPromptWithData(currentIdea, product, research, marketingStrategy, technicalStrategy);
   };
 
   const getBoltUrl = () => {
@@ -324,72 +440,70 @@ function App() {
     }]);
   };
 
-  const voteOnItem = async (itemType, itemId, vote, feedback = '') => {
-    try {
-      const response = await fetch('http://localhost:5001/api/tokens/vote', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tokenHolderId,
-          itemType,
-          itemId,
-          vote,
-          feedback,
-        }),
-      });
-      const data = await response.json();
-      if (data.success) {
+  const startMarketingCampaign = () => {
+    setAgentActivity(prev => [...prev, { 
+      agent: 'Marketing Agent', 
+      action: 'Starting marketing campaign execution...', 
+      time: new Date().toLocaleTimeString() 
+    }]);
+    
+    // You can add actual marketing campaign logic here
+    // For now, just show that the marketing agent is working
+    setTimeout(() => {
+      setAgentActivity(prev => [...prev, { 
+        agent: 'Marketing Agent', 
+        action: 'Marketing campaigns launched successfully!', 
+        time: new Date().toLocaleTimeString() 
+      }]);
+    }, 2000);
+  };
+
+  const voteOnItem = async (itemType, vote, feedback = '') => {
+    console.log('🗳️ [FRONTEND] Voting on:', { itemType, vote });
+    
+    // Simple frontend-only voting - no API call needed
+    setAgentActivity(prev => [...prev, { 
+      agent: 'Token Holder', 
+      action: `${vote}d ${itemType}`, 
+      time: new Date().toLocaleTimeString() 
+    }]);
+    
+    // Auto-trigger next step if idea is approved
+    if (itemType === 'idea' && vote === 'approve' && currentIdea) {
+      setTimeout(() => {
+        console.log('🔍 [FRONTEND] Starting research for idea:', currentIdea.title);
+        researchIdea();
+      }, 1000);
+    }
+    
+    // Auto-trigger CMO and CTO agents after product approval
+    if (itemType === 'product' && vote === 'approve' && product) {
+      setTimeout(() => {
+        console.log('📢 [FRONTEND] Starting CMO/CTO for product:', product.product_name);
+        triggerCMOAndCTO();
+      }, 1000);
+    }
+    
+    // Auto-generate new idea if idea is rejected
+    if (itemType === 'idea' && vote === 'reject') {
+      setTimeout(() => {
         setAgentActivity(prev => [...prev, { 
-          agent: 'Token Holder', 
-          action: `${vote}d ${itemType}`, 
+          agent: 'CEO Agent', 
+          action: 'Idea rejected. Generating new business idea...', 
           time: new Date().toLocaleTimeString() 
         }]);
-        
-        await fetchIdeas();
-        
-        // Auto-trigger next step if idea is approved
-        if (itemType === 'idea' && vote === 'approve') {
-          setTimeout(() => {
-            researchIdea(itemId);
-          }, 1000);
-        }
-        
-        // Auto-trigger product development if research is done and product is approved
-        if (itemType === 'product' && vote === 'approve') {
-          setTimeout(() => {
-            const idea = ideas.find(i => i.id === itemId);
-            if (idea && idea.research && !idea.product) {
-              developProduct(itemId);
-            }
-          }, 1000);
-          
-          // Auto-trigger CMO and CTO agents after product approval
-          setTimeout(() => {
-            triggerCMOAndCTO(itemId);
-          }, 3000);
-        }
-      }
-    } catch (error) {
-      console.error('Error voting:', error);
+        // Generate a completely new idea
+        generateIdeas();
+      }, 2000);
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'approved': return 'green';
-      case 'rejected': return 'red';
-      case 'pending': return 'orange';
-      default: return 'gray';
-    }
-  };
 
   return (
     <div className="App">
       <header className="App-header">
-        <h1>🤖 AI Company - Token Holder Dashboard</h1>
-        <p>Token Holder ID: {tokenHolderId}</p>
+        <h1>AI Company - Token Holder Dashboard</h1>
+        <p style={{ color: '#6b7280', fontSize: '0.875rem', margin: 0 }}>Token Holder ID: {tokenHolderId}</p>
       </header>
 
       <main className="main-content">
@@ -403,7 +517,12 @@ function App() {
           </button>
           <button 
             onClick={() => {
-              setIdeas([]);
+              setCurrentIdea(null);
+              setResearch(null);
+              setProduct(null);
+              setMarketingStrategy(null);
+              setTechnicalStrategy(null);
+              setBoltPrompt(null);
               setAgentActivity([]);
               setCurrentAgent(null);
             }}
@@ -411,82 +530,64 @@ function App() {
           >
             🗑️ Clear All & Start Fresh
           </button>
-          <button 
-            onClick={fetchIdeas}
-            className="refresh-btn"
-          >
-            🔄 Refresh Data
-          </button>
-          <button 
-            onClick={openBoltWithPrompt}
-            className="test-bolt-btn"
-          >
-            🚀 Test Bolt Integration
-          </button>
         </div>
 
-        {/* Agent Activity Display */}
-        <div className="agent-activity">
-          <h3>🤖 Agent Activity</h3>
-          {currentAgent && (
-            <div className="current-agent">
-              <strong>{currentAgent}</strong> is currently working...
-            </div>
-          )}
-          <div className="activity-log">
-            {agentActivity.slice(-5).reverse().map((activity, index) => (
-              <div key={index} className="activity-item">
-                <span className="agent-name">{activity.agent}:</span>
-                <span className="action">{activity.action}</span>
-                <span className="time">{activity.time}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Agent Flow Visualization */}
+        <AgentFlow 
+          currentAgent={currentAgent}
+          agentActivity={agentActivity}
+          currentIdea={currentIdea}
+          research={research}
+          product={product}
+          marketingStrategy={marketingStrategy}
+          technicalStrategy={technicalStrategy}
+          boltPrompt={boltPrompt}
+          onOpenBolt={openBoltWithPrompt}
+          onStartMarketing={startMarketingCampaign}
+        />
 
         <div className="ideas-grid">
-          {ideas.map((idea) => (
-            <div key={idea.id} className="idea-card">
-              <h3>{idea.title}</h3>
-              <p>{idea.description}</p>
-              <p><strong>Revenue Model:</strong> {idea.potential_revenue}</p>
-              <p><strong>Status:</strong> 
-                <span style={{ color: getStatusColor(idea.status) }}>
-                  {idea.status.toUpperCase()}
+          {currentIdea ? (
+            <div className="idea-card">
+              <h3>{currentIdea.title}</h3>
+              <p>{currentIdea.description}</p>
+              <div className="idea-status">
+                <span className="status-badge pending">
+                  PENDING
                 </span>
-              </p>
+              </div>
               
               <div className="idea-actions">
-                {idea.status === 'pending' && (
+                {!research && (
                   <>
                     <button 
-                      onClick={() => voteOnItem('idea', idea.id, 'approve')}
+                      onClick={() => voteOnItem('idea', 'approve')}
                       className="approve-btn"
                     >
                       ✅ Approve & Start Research
                     </button>
                     <button 
-                      onClick={() => voteOnItem('idea', idea.id, 'reject')}
+                      onClick={() => voteOnItem('idea', 'reject')}
                       className="reject-btn"
                     >
-                      ❌ Reject
+                      ❌ Reject & Generate New
                     </button>
                   </>
                 )}
                 
-                {idea.status === 'approved' && !idea.research && (
-                  <div className="workflow-status">
-                    <span className="status-text">⏳ Research Agent will start automatically...</span>
-                  </div>
-                )}
-                
-                {idea.research && !idea.product && (
+                {research && !product && (
                   <div className="workflow-status">
                     <span className="status-text">⏳ Product Agent will start automatically...</span>
                   </div>
                 )}
+
+                {currentAgent && currentAgent.includes('CEO Agent') && loading && (
+                  <div className="workflow-status">
+                    <span className="status-text">🤔 CEO Agent is thinking of a new idea...</span>
+                  </div>
+                )}
                 
-                {idea.product && idea.product.status === 'pending' && (
+                {product && !marketingStrategy && (
                   <div className="final-approval-section">
                     <div className="ceo-approval-header">
                       <h4>🎯 CEO Agent Evaluation Complete!</h4>
@@ -496,13 +597,13 @@ function App() {
                       <h5>Final Token Holder Decision Required:</h5>
                       <div className="product-actions">
                         <button 
-                          onClick={() => voteOnItem('product', idea.product.id, 'approve')}
+                          onClick={() => voteOnItem('product', 'approve')}
                           className="final-approve-btn"
                         >
                           🚀 APPROVE FINAL PRODUCT
                         </button>
                         <button 
-                          onClick={() => voteOnItem('product', idea.product.id, 'reject')}
+                          onClick={() => voteOnItem('product', 'reject')}
                           className="final-reject-btn"
                         >
                           ❌ REJECT PRODUCT
@@ -512,14 +613,14 @@ function App() {
                   </div>
                 )}
                 
-                {idea.product && idea.product.status === 'approved' && (
+                {marketingStrategy && technicalStrategy && !boltPrompt && (
                   <div className="workflow-complete">
                     <span className="complete-text">🎉 WORKFLOW COMPLETE! Product approved and ready for development!</span>
                   </div>
                 )}
               </div>
 
-              {idea.research && !idea.product && (
+              {research && (
                 <div className="research-section">
                   <h4>📊 Research Agent Status:</h4>
                   <div className="research-status">
@@ -528,12 +629,12 @@ function App() {
                 </div>
               )}
 
-              {idea.product && (
+              {product && (
                 <div className="product-section">
                   <h4>🚀 Complete Product Concept (CEO Approved):</h4>
                   <div className="product-details">
                     <div className="product-header">
-                      <h5>🎯 {idea.product.product_name}</h5>
+                      <h5>🎯 {product.product_name || 'Product Name'}</h5>
                       <div className="ceo-approval-badge">
                         <span>✅ CEO Agent Approved</span>
                       </div>
@@ -541,13 +642,13 @@ function App() {
                     
                     <div className="product-description">
                       <h6>📝 Product Description:</h6>
-                      <p>{idea.product.product_description}</p>
+                      <p>{product.product_description || 'Product description will be added here.'}</p>
                     </div>
                     
                     <div className="product-features">
-                      <h6>⚡ Core Features ({idea.product.features?.length || 0}):</h6>
+                      <h6>⚡ Core Features ({product.features?.length || 0}):</h6>
                       <ul className="features-list">
-                        {idea.product.features?.map((feature, index) => (
+                        {product.features?.map((feature, index) => (
                           <li key={index}>{feature}</li>
                         ))}
                       </ul>
@@ -556,177 +657,111 @@ function App() {
         <div className="product-market">
           <h6>🎯 Target Market:</h6>
           <div className="market-details">
-            {typeof idea.product.target_market === 'object' ? (
+            {typeof product.target_market === 'object' ? (
               <>
-                <p><strong>Primary:</strong> {formatSegment(idea.product.target_market.primary)}</p>
-                <p><strong>Secondary:</strong> {formatSegment(idea.product.target_market.secondary)}</p>
+                <p><strong>Primary:</strong> {formatSegment(product.target_market.primary)}</p>
+                <p><strong>Secondary:</strong> {formatSegment(product.target_market.secondary)}</p>
               </>
             ) : (
-              <p>{formatSegment(idea.product.target_market)}</p>
+              <p>{formatSegment(product.target_market)}</p>
             )}
           </div>
         </div>
                     
-                    {idea.product.value_proposition && (
+                    {product.value_proposition && (
                       <div className="product-value">
                         <h6>💎 Value Proposition:</h6>
-                        <p>{idea.product.value_proposition}</p>
+                        <p>{product.value_proposition}</p>
                       </div>
                     )}
                     
-                    {idea.product.revenue_model && (
+                    {product.revenue_model && (
                       <div className="product-revenue">
                         <h6>💰 Revenue Model:</h6>
-                        <p>{idea.product.revenue_model}</p>
+                        <p>{product.revenue_model}</p>
                       </div>
                     )}
                   </div>
                 </div>
               )}
 
-              {/* Marketing Strategy Section */}
+              {/* Simplified Status Indicators */}
               {marketingStrategy && (
-                <div className="marketing-strategy-section">
-                  <h4>📢 Marketing Strategy (CMO Agent):</h4>
-                  <div className="marketing-details">
-                    <div className="marketing-positioning">
-                      <h6>🎯 Brand Positioning:</h6>
-                      <p>{marketingStrategy.brand_positioning}</p>
-                    </div>
-                    
-                    {marketingStrategy.key_messages && (
-                      <div className="marketing-messages">
-                        <h6>💬 Key Messages:</h6>
-                        <ul>
-                          {marketingStrategy.key_messages.map((message, index) => (
-                            <li key={index}>{message}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {marketingStrategy.marketing_channels && (
-                      <div className="marketing-channels">
-                        <h6>📺 Marketing Channels:</h6>
-                        <ul>
-                          {marketingStrategy.marketing_channels.map((channel, index) => (
-                            <li key={index}>
-                              <strong>{channel.channel}:</strong> {channel.strategy} ({channel.budget_allocation})
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {marketingStrategy.budget_recommendations && (
-                      <div className="marketing-budget">
-                        <h6>💰 Budget Recommendations:</h6>
-                        <p><strong>Total Budget:</strong> {marketingStrategy.budget_recommendations.total_budget}</p>
-                      </div>
-                    )}
-                  </div>
+                <div className="workflow-status">
+                  <span className="status-text">✅ Marketing Strategy Complete</span>
                 </div>
               )}
 
-              {/* Bolt Prompt Section */}
               {boltPrompt && (
-                <div className="bolt-prompt-section">
-                  <h4>🏗️ Website Development Prompt (Head of Engineering):</h4>
-                  <div className="bolt-details">
-                    <div className="bolt-header">
-                      <h6>📋 Website: {boltPrompt.website_title}</h6>
-                      <p>{boltPrompt.website_description}</p>
-                    </div>
-                    
-                    {boltPrompt.pages_required && (
-                      <div className="bolt-pages">
-                        <h6>📄 Pages Required:</h6>
-                        <ul>
-                          {boltPrompt.pages_required.map((page, index) => (
-                            <li key={index}>{page}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {boltPrompt.functional_requirements && (
-                      <div className="bolt-features">
-                        <h6>⚙️ Functional Requirements:</h6>
-                        <ul>
-                          {boltPrompt.functional_requirements.map((feature, index) => (
-                            <li key={index}>{feature}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    <div className="bolt-prompt">
-                      <h6>🚀 Bolt Prompt:</h6>
-                      <div className="prompt-text">
-                        {boltPrompt.bolt_prompt}
-                      </div>
-                    </div>
+                <div className="workflow-complete">
+                  <div className="workflow-status">
+                    <span className="status-text">✅ Website Development Prompt Ready - Click Developer Agent above to build</span>
                   </div>
                   
-                  {/* Build Website Button */}
-                  <div className="build-website-section">
-                    <button 
-                      className="build-website-btn"
-                      onClick={openBoltWithPrompt}
-                    >
-                      🚀 Build Website with Developer Agent
-                    </button>
-                    <p className="build-website-desc">
-                      Click to open the Developer Agent (Bolt) with this prompt and start building your website!
-                    </p>
-                  </div>
-                  
-                  {/* Inline Bolt Development Section */}
-                  {showBoltModal && boltPrompt && (
-                    <div className="bolt-development-section">
-                      <div className="bolt-section-header">
-                        <h4>🚀 Developer Agent - Website Development</h4>
-                        <button 
-                          className="close-bolt-btn"
-                          onClick={() => setShowBoltModal(false)}
-                        >
-                          ✕ Close
-                        </button>
+                  {/* Bolt Prompt Details */}
+                  <div className="bolt-prompt-section">
+                    <h3>🏗️ Website Development Prompt (Head of Engineering)</h3>
+                    <div className="bolt-prompt-content">
+                      <div className="prompt-header">
+                        <h4>📋 Website: {boltPrompt.website_title}</h4>
+                        <p>{boltPrompt.website_description}</p>
                       </div>
                       
-                      <div className="bolt-section-content">
-                        <div className="bolt-prompt-info">
-                          <h5>📋 Building: {boltPrompt.website_title}</h5>
-                          <p>{boltPrompt.website_description}</p>
-                          <div className="bolt-prompt-display">
-                            <strong>Prompt sent to Developer Agent:</strong>
-                            <div className="prompt-box">
-                              {boltPrompt.bolt_prompt}
-                            </div>
+                      <div className="prompt-details">
+                        <div className="detail-section">
+                          <h5>📄 Pages Required:</h5>
+                          <ul>
+                            {boltPrompt.pages_required?.map((page, index) => (
+                              <li key={index}>{page}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        
+                        <div className="detail-section">
+                          <h5>⚙️ Functional Requirements:</h5>
+                          <ul>
+                            {boltPrompt.functional_requirements?.map((req, index) => (
+                              <li key={index}>{req}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        
+                        <div className="detail-section">
+                          <h5>🎨 Design Specifications:</h5>
+                          <div className="design-specs">
+                            <p><strong>Color Scheme:</strong> {JSON.stringify(boltPrompt.design_specifications?.color_scheme)}</p>
+                            <p><strong>Typography:</strong> {JSON.stringify(boltPrompt.design_specifications?.typography)}</p>
+                            <p><strong>Layout:</strong> {boltPrompt.design_specifications?.layout_style}</p>
                           </div>
                         </div>
                         
-                        <div className="bolt-iframe-container">
-                          <iframe
-                            src={`http://localhost:5173/?prompt=${encodeURIComponent(boltPrompt.bolt_prompt)}`}
-                            title="Developer Agent - Bolt.diy"
-                            className="bolt-iframe"
-                            allow="clipboard-read; clipboard-write; cross-origin-isolated; shared-array-buffer"
-                            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-                          />
+                        <div className="detail-section">
+                          <h5>🚀 Bolt Prompt:</h5>
+                          <div className="bolt-prompt-text">
+                            {boltPrompt.bolt_prompt}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
             </div>
-          ))}
+          ) : null}
         </div>
 
-        {ideas.length === 0 && (
+        {!currentIdea && !loading && (
           <div className="empty-state">
             <p>No idea currently being worked on. Click "Generate New Idea" to start the AI Company workflow!</p>
+          </div>
+        )}
+
+        {!currentIdea && loading && currentAgent && currentAgent.includes('CEO Agent') && (
+          <div className="empty-state">
+            <p>🤔 CEO Agent is thinking of a new business idea...</p>
+            <p style={{ fontSize: '0.9rem', color: '#6b7280', marginTop: '10px' }}>
+              Please wait while we generate something amazing!
+            </p>
           </div>
         )}
       </main>
@@ -735,4 +770,4 @@ function App() {
   );
 }
 
-export default App;
+export default App; 

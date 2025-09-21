@@ -22,25 +22,69 @@ router.post('/generate-ideas', async (req, res) => {
     const { count = 3 } = req.body;
     const ideas = await ceoAgent.generateIdeas(count);
     
-    // Save ideas to database
-    for (const idea of ideas) {
-      db.run(
-        'INSERT INTO ideas (title, description, potential_revenue) VALUES (?, ?, ?)',
-        [idea.title, idea.description, idea.revenue_model],
-        function(err) {
-          if (err) console.error('Error saving idea:', err);
-        }
-      );
-    }
+    // Use Promise.all to wait for all database operations
+    const savePromises = ideas.map(idea => {
+      return new Promise((resolve, reject) => {
+        db.run(
+          'INSERT INTO ideas (title, description, potential_revenue) VALUES (?, ?, ?)',
+          [idea.title, idea.description, idea.revenue_model],
+          function(err) {
+            if (err) {
+              reject(err);
+            } else {
+              // Get the saved idea with ID
+              const ideaId = this.lastID;
+              console.log('💾 [ROUTE] Saved idea with ID:', ideaId);
+              db.get('SELECT * FROM ideas WHERE id = ?', [ideaId], (err, savedIdea) => {
+                if (err) {
+                  console.error('❌ [ROUTE] Error fetching saved idea:', err);
+                  reject(err);
+                } else {
+                  console.log('✅ [ROUTE] Fetched saved idea:', savedIdea);
+                  resolve(savedIdea);
+                }
+              });
+            }
+          }
+        );
+      });
+    });
     
-    res.json({ success: true, ideas });
+    const savedIdeas = await Promise.all(savePromises);
+    res.json({ success: true, ideas: savedIdeas });
   } catch (error) {
     console.error('Error generating ideas:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Research an idea
+// Research an idea (simple version without ID)
+router.post('/research', async (req, res) => {
+  try {
+    const { idea } = req.body;
+    console.log('🔍 [ROUTE] Research endpoint called for idea:', idea?.title);
+    
+    if (!idea) {
+      return res.status(400).json({ success: false, error: 'Idea data is required' });
+    }
+    
+    console.log('🔍 [ROUTE] Calling Research Agent...');
+    const researchData = await researchAgent.researchIdea(idea);
+    
+    console.log('🔍 [ROUTE] Research Agent returned:', {
+      competitors_count: researchData.competitors?.length || 0,
+      market_size: researchData.market_analysis?.market_size,
+      has_recommendations: !!researchData.recommendations
+    });
+    
+    res.json({ success: true, research: researchData });
+  } catch (error) {
+    console.error('Error researching idea:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Research an idea (legacy version with ID)
 router.post('/research/:ideaId', async (req, res) => {
   try {
     const { ideaId } = req.params;
@@ -95,7 +139,32 @@ router.post('/research/:ideaId', async (req, res) => {
   }
 });
 
-// Develop product
+// Develop product (simple version without ID)
+router.post('/develop-product', async (req, res) => {
+  try {
+    const { idea, research } = req.body;
+    console.log('🚀 [ROUTE] Product development endpoint called for idea:', idea?.title);
+    
+    if (!idea) {
+      return res.status(400).json({ success: false, error: 'Idea data is required' });
+    }
+    
+    console.log('🚀 [ROUTE] Calling Product Agent...');
+    const productData = await productAgent.developProduct(idea, research);
+    
+    console.log('🚀 [ROUTE] Product Agent returned:', {
+      product_name: productData.product_name,
+      features_count: productData.features?.length || 0
+    });
+    
+    res.json({ success: true, product: productData });
+  } catch (error) {
+    console.error('Error developing product:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Develop product (legacy version with ID)
 router.post('/develop-product/:ideaId', async (req, res) => {
   try {
     const { ideaId } = req.params;
@@ -132,7 +201,33 @@ router.post('/develop-product/:ideaId', async (req, res) => {
   }
 });
 
-// Develop marketing strategy
+// Develop marketing strategy (simple version without ID)
+router.post('/marketing-strategy', async (req, res) => {
+  try {
+    const { idea, product } = req.body;
+    console.log('📢 [ROUTE] Marketing strategy endpoint called for product:', product?.product_name);
+    
+    if (!idea || !product) {
+      return res.status(400).json({ success: false, error: 'Idea and product data are required' });
+    }
+    
+    console.log('📢 [ROUTE] Calling CMO Agent...');
+    const strategyData = await cmoAgent.developMarketingStrategy(idea, product, {});
+    
+    console.log('📢 [ROUTE] CMO Agent returned:', {
+      channels_count: strategyData.marketing_channels?.length || 0,
+      target_segments: strategyData.target_segments?.length || 0,
+      has_launch_plan: !!strategyData.launch_plan
+    });
+    
+    res.json({ success: true, strategy: strategyData });
+  } catch (error) {
+    console.error('Error developing marketing strategy:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Develop marketing strategy (legacy version with ID)
 router.post('/marketing-strategy/:ideaId', async (req, res) => {
   try {
     const { ideaId } = req.params;
@@ -172,7 +267,33 @@ router.post('/marketing-strategy/:ideaId', async (req, res) => {
   }
 });
 
-// Develop technical strategy
+// Develop technical strategy (simple version without ID)
+router.post('/technical-strategy', async (req, res) => {
+  try {
+    const { idea, product } = req.body;
+    console.log('⚙️ [ROUTE] Technical strategy endpoint called for product:', product?.product_name);
+    
+    if (!idea || !product) {
+      return res.status(400).json({ success: false, error: 'Idea and product data are required' });
+    }
+    
+    console.log('⚙️ [ROUTE] Calling CTO Agent...');
+    const strategyData = await ctoAgent.developTechnicalStrategy(idea, product, {});
+    
+    console.log('⚙️ [ROUTE] CTO Agent returned:', {
+      tech_stack_count: Object.keys(strategyData.technology_stack || {}).length,
+      phases_count: strategyData.development_phases?.length || 0,
+      has_architecture: !!strategyData.architecture
+    });
+    
+    res.json({ success: true, strategy: strategyData });
+  } catch (error) {
+    console.error('Error developing technical strategy:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Develop technical strategy (legacy version with ID)
 router.post('/technical-strategy/:ideaId', async (req, res) => {
   try {
     const { ideaId } = req.params;
@@ -212,7 +333,39 @@ router.post('/technical-strategy/:ideaId', async (req, res) => {
   }
 });
 
-// Create Bolt prompt for website development
+// Create Bolt prompt for website development (simple version without ID)
+router.post('/bolt-prompt', async (req, res) => {
+  try {
+    const { idea, product, research, marketingStrategy, technicalStrategy } = req.body;
+    console.log('🔧 [ROUTE] Bolt prompt endpoint called for product:', product?.product_name);
+    
+    if (!idea || !product) {
+      return res.status(400).json({ success: false, error: 'Idea and product data are required' });
+    }
+    
+    console.log('🔧 [ROUTE] Calling Head of Engineering Agent...');
+    const boltPromptData = await headOfEngineeringAgent.createBoltPrompt(
+      idea, 
+      product, 
+      research, 
+      marketingStrategy, 
+      technicalStrategy
+    );
+    
+    console.log('🔧 [ROUTE] Head of Engineering Agent returned:', {
+      website_title: boltPromptData.website_title,
+      pages_count: boltPromptData.pages_required?.length || 0,
+      features_count: boltPromptData.functional_requirements?.length || 0
+    });
+    
+    res.json({ success: true, boltPrompt: boltPromptData });
+  } catch (error) {
+    console.error('Error creating Bolt prompt:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Create Bolt prompt for website development (legacy version with ID)
 router.post('/bolt-prompt/:ideaId', async (req, res) => {
   try {
     const { ideaId } = req.params;
@@ -221,6 +374,10 @@ router.post('/bolt-prompt/:ideaId', async (req, res) => {
     db.get('SELECT * FROM ideas WHERE id = ?', [ideaId], async (err, idea) => {
       if (err) {
         return res.status(500).json({ success: false, error: err.message });
+      }
+      
+      if (!idea) {
+        return res.status(404).json({ success: false, error: 'Idea not found' });
       }
       
       db.get('SELECT * FROM research WHERE idea_id = ? ORDER BY created_at DESC LIMIT 1', [ideaId], async (err, research) => {

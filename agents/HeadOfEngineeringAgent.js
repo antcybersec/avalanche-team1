@@ -6,6 +6,12 @@ class HeadOfEngineeringAgent extends ClaudeAgent {
   }
 
   async createBoltPrompt(idea, product, research, marketingStrategy, technicalStrategy) {
+    // Add error handling for undefined idea
+    if (!idea) {
+      console.error('❌ [HEAD OF ENGINEERING] Error: idea parameter is undefined');
+      throw new Error('Idea parameter is required but was not provided');
+    }
+    
     const prompt = `As a Head of Engineering, create a comprehensive Bolt prompt for building a website based on the following project:
 
 Product Idea:
@@ -85,7 +91,13 @@ Format your response as JSON:
 
     let response;
     try {
-      response = await this.generateResponse(prompt, 4000);
+      // Add timeout wrapper for the API call
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('API call timeout after 30 seconds')), 30000);
+      });
+      
+      const apiPromise = this.generateResponse(prompt, 4000);
+      response = await Promise.race([apiPromise, timeoutPromise]);
       let cleanedResponse = response
         .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
         .replace(/\n/g, '\\n')
@@ -107,8 +119,12 @@ Format your response as JSON:
       
       return boltPrompt;
     } catch (error) {
-      console.error('Error creating Bolt prompt:', error);
-      console.error('Raw response:', response);
+      console.error('❌ [HEAD OF ENGINEERING] Error creating Bolt prompt:', error.message);
+      console.error('❌ [HEAD OF ENGINEERING] Error type:', error.constructor.name);
+      if (response) {
+        console.error('❌ [HEAD OF ENGINEERING] Raw response length:', response.length);
+        console.error('❌ [HEAD OF ENGINEERING] Raw response preview:', response.substring(0, 200));
+      }
       return { 
         website_title: product.product_name + ' Website',
         website_description: product.product_description,

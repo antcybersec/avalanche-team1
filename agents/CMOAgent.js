@@ -17,9 +17,9 @@ Target Market: ${JSON.stringify(product.target_market)}
 Value Proposition: ${product.value_proposition || 'Not specified'}
 
 Research Data:
-Market Size: ${research.market_analysis?.market_size || 'Not available'}
-Competitors: ${JSON.stringify(research.competitors || [])}
-Target Audience: ${research.recommendations?.target_audience || 'Not specified'}
+Market Size: ${research?.market_analysis?.market_size || 'Not available'}
+Competitors: ${JSON.stringify(research?.competitors || [])}
+Target Audience: ${research?.recommendations?.target_audience || 'Not specified'}
 
 Create a comprehensive marketing strategy including:
 

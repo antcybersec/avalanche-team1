@@ -17,9 +17,9 @@ Features: ${JSON.stringify(product.features || [])}
 Target Market: ${JSON.stringify(product.target_market)}
 
 Research Data:
-Market Size: ${research.market_analysis?.market_size || 'Not available'}
-Competitors: ${JSON.stringify(research.competitors || [])}
-Key Challenges: ${JSON.stringify(research.market_analysis?.key_challenges || [])}
+Market Size: ${research?.market_analysis?.market_size || 'Not available'}
+Competitors: ${JSON.stringify(research?.competitors || [])}
+Key Challenges: ${JSON.stringify(research?.market_analysis?.key_challenges || [])}
 
 Create a comprehensive technical strategy including:
 

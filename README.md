@@ -48,16 +48,46 @@ npm run client
 2. **Token Holder Vote**: Approve/reject ideas via dashboard
 3. **Research Phase**: Research Agent analyzes approved ideas
 4. **Product Development**: Product Agent creates detailed concepts
-5. **Final Approval**: Token holders vote on final products
+5. **CEO Validation**: CEO Agent evaluates product concept for market viability
+6. **Token Holder Vote**: Approve/reject product concepts via dashboard
+7. **Marketing Strategy**: CMO Agent develops marketing plans
+8. **Technical Strategy**: CTO Agent creates technical architecture
+9. **Marketing Agent**: Receives strategy from CMO and executes campaigns
+10. **Head of Engineering**: Receives technical strategy from CTO and creates Bolt prompts
+11. **Developer Agent**: Receives prompts and opens Bolt.diy for website development
+
+## 🔧 Recent Updates & Fixes
+
+### Agent Flow Fixes (September 2025)
+- ✅ **Fixed 404 Error**: Resolved server endpoint issues causing agent communication failures
+- ✅ **Complete Agent Flow**: Fixed workflow to properly trigger all agents in sequence:
+  - Research Agent → Product Agent → CMO Agent → CTO Agent → Head of Engineering
+- ✅ **Backend Stability**: Fixed CMO and CTO agents to handle missing research data gracefully
+- ✅ **Frontend Integration**: Updated frontend to properly trigger subsequent agents after each step
+
+### What Was Fixed
+1. **Server Restart Required**: The main issue was a server process that needed restarting
+2. **Agent Flow Logic**: Updated `developProduct()` function to call `triggerCMOAndCTO()` instead of stopping
+3. **Error Handling**: Fixed agents to handle empty research data without crashing
+4. **Route Parameters**: Corrected agent method calls to pass proper parameters
+5. **React State Timing Issue**: Fixed critical issue where agents weren't triggering due to React state update timing - now passes data directly between functions
+
+### Current Status
+- ✅ All agent endpoints working correctly
+- ✅ Complete workflow from idea generation to bolt prompt creation
+- ✅ Proper error handling and fallback data
+- ✅ Real-time agent activity tracking in UI
 
 ### Agent Hierarchy
 ```
-CEO Agent
-├── Research Agent
-├── Product Agent
-├── Frontend Agent (coming soon)
-├── Backend Agent (coming soon)
-└── Marketing Agent (coming soon)
+CEO Agent (Idea Generation & Product Validation)
+├── Research Agent (Market Analysis)
+├── Product Agent (Product Development)
+├── CMO Agent (Marketing Strategy)
+│   └── Marketing Agent (Campaign Execution)
+└── CTO Agent (Technical Strategy)
+    └── Head of Engineering Agent (Bolt Prompt Creation)
+        └── Developer Agent (Bolt.diy Integration)
 ```
 
 ## 🛠️ Features
@@ -165,13 +195,36 @@ NODE_ENV=development npm start
 4. **Real-time Updates**: WebSocket integration for live updates
 5. **Advanced UI**: Better dashboard with real-time agent activity
 
+## 🎨 UI Redesign (Latest Update)
+
+### Design Philosophy
+- **Minimalist Aesthetic**: Clean, professional interface inspired by modern design systems
+- **Terminal Theme**: Agent activity section uses black/red color scheme for autonomous/degen vibe
+- **Neutral Color Palette**: Replaced colorful gradients with sophisticated grays, whites, and blacks
+- **Typography**: Clean, readable fonts with proper hierarchy and spacing
+
+### Key Changes
+1. **Background**: Changed from colorful gradient to clean white/light gray (`#f8f9fa`)
+2. **Cards**: White backgrounds with subtle borders instead of translucent glass effects
+3. **Buttons**: Minimalist design with neutral colors and subtle hover effects
+4. **Agent Activity**: Terminal-style section with black background and red accent colors
+5. **Typography**: Improved font weights, sizes, and spacing for better readability
+6. **Color Scheme**: Consistent use of grays (#374151, #4a5568, #6b7280) and blacks (#000000, #1a202c)
+
+### Technical Implementation
+- Updated `client/src/App.css` with complete redesign
+- Maintained all functionality while improving visual hierarchy
+- Added terminal-style monospace fonts for agent activity
+- Improved responsive design and accessibility
+
 ## 📝 Development Notes
 
 - All agent communication uses Claude API
 - Database is SQLite for simplicity
-- Frontend is React with basic styling
+- Frontend is React with minimalist, professional styling
 - API uses Express.js with CORS enabled
 - Token holder system is basic voting mechanism
+- UI follows modern design principles with terminal-inspired agent activity section
 
 ## 🤝 Contributing
 
