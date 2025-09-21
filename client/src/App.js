@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import AgentFlow from './AgentFlow';
+import RevenueDashboard from './RevenueDashboard';
 
 function App() {
   // Simple frontend state - no database IDs needed
@@ -14,6 +15,7 @@ function App() {
   const [currentAgent, setCurrentAgent] = useState(null);
   const [loading, setLoading] = useState(false);
   const [tokenHolderId] = useState('token_holder_' + Math.random().toString(36).substr(2, 9));
+  const [activeTab, setActiveTab] = useState('dashboard');
   const boltWindowRef = useRef(null);
 
   // Helper function to safely format target market segments
@@ -52,7 +54,8 @@ function App() {
     setAgentActivity(prev => [...prev, { agent: 'CEO Agent', action: 'Generating new business idea...', time: new Date().toLocaleTimeString() }]);
     
     try {
-      const response = await fetch('http://localhost:5001/api/agents/generate-ideas', {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${apiUrl}/api/agents/generate-ideas`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,7 +85,8 @@ function App() {
     setAgentActivity(prev => [...prev, { agent: 'Research Agent', action: 'Conducting market research...', time: new Date().toLocaleTimeString() }]);
     
     try {
-      const response = await fetch('http://localhost:5001/api/agents/research', {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${apiUrl}/api/agents/research`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -129,7 +133,8 @@ function App() {
     setAgentActivity(prev => [...prev, { agent: 'Product Agent', action: 'Developing product concept...', time: new Date().toLocaleTimeString() }]);
     
     try {
-      const response = await fetch('http://localhost:5001/api/agents/develop-product', {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${apiUrl}/api/agents/develop-product`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -164,19 +169,7 @@ function App() {
     }
   };
 
-  // Fallback function for backward compatibility
-  const developProduct = async () => {
-    console.log('🚀 [FRONTEND] developProduct (fallback) called with:', { currentIdea: !!currentIdea, research: !!research });
-    
-    if (!currentIdea || !research) {
-      console.log('❌ [FRONTEND] developProduct (fallback) blocked - missing data:', { currentIdea: !!currentIdea, research: !!research });
-      setAgentActivity(prev => [...prev, { agent: 'Product Agent', action: 'Error: Missing required data for product development', time: new Date().toLocaleTimeString() }]);
-      return;
-    }
-    
-    // Use the new function with current state
-    developProductWithData(currentIdea, research);
-  };
+  // developProduct fallback function removed - using developProductWithData directly
 
   const triggerCMOAndCTOWithData = async (ideaData, productData, researchData) => {
     console.log('🚀 [FRONTEND] triggerCMOAndCTOWithData called with:', { idea: !!ideaData, product: !!productData, research: !!researchData });
@@ -199,7 +192,8 @@ function App() {
         time: new Date().toLocaleTimeString() 
       }]);
       
-      const cmoResponse = await fetch('http://localhost:5001/api/agents/marketing-strategy', {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+      const cmoResponse = await fetch(`${apiUrl}/api/agents/marketing-strategy`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -241,7 +235,7 @@ function App() {
         time: new Date().toLocaleTimeString() 
       }]);
       
-      const ctoResponse = await fetch('http://localhost:5001/api/agents/technical-strategy', {
+      const ctoResponse = await fetch(`${apiUrl}/api/agents/technical-strategy`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -323,7 +317,8 @@ function App() {
     console.log('🔧 [FRONTEND] Starting Bolt prompt creation for product:', productData.product_name);
     
     try {
-      const response = await fetch('http://localhost:5001/api/agents/bolt-prompt', {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${apiUrl}/api/agents/bolt-prompt`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -363,6 +358,11 @@ function App() {
           time: new Date().toLocaleTimeString() 
         }]);
         
+        // Trigger revenue distribution for project completion
+        setTimeout(() => {
+          triggerRevenueDistribution(currentIdea.id, 'website_deployment', boltPrompt);
+        }, 3000);
+        
         // Developer Agent is now ready and clickable
       }
     } catch (error) {
@@ -376,25 +376,66 @@ function App() {
     }
   };
 
-  // Fallback function for backward compatibility
-  const createBoltPrompt = async () => {
-    console.log('🔧 [FRONTEND] createBoltPrompt (fallback) called with:', { 
-      currentIdea: !!currentIdea, 
-      product: !!product, 
-      research: !!research,
-      marketing: !!marketingStrategy,
-      technical: !!technicalStrategy
-    });
-    
-    if (!currentIdea || !product || !marketingStrategy || !technicalStrategy) {
-      console.log('❌ [FRONTEND] createBoltPrompt (fallback) blocked - missing data');
-      setAgentActivity(prev => [...prev, { agent: 'Head of Engineering', action: 'Error: Missing required data for bolt prompt creation', time: new Date().toLocaleTimeString() }]);
-      return;
+  // Trigger revenue distribution for completed projects
+  const triggerRevenueDistribution = async (ideaId, projectType, completionData) => {
+    try {
+      console.log('💰 Triggering revenue distribution for project:', ideaId, projectType);
+      
+      setAgentActivity(prev => [...prev, { 
+        agent: 'Finance Agent', 
+        action: 'Processing revenue distribution...', 
+        time: new Date().toLocaleTimeString() 
+      }]);
+
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${apiUrl}/api/finance/complete-project`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: ideaId,
+          completionType: projectType,
+          revenueAmount: 0.1, // Default 0.1 AVAX for website deployment
+          completionData: completionData
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setAgentActivity(prev => [...prev, { 
+          agent: 'Finance Agent', 
+          action: `✅ Revenue distributed: ${result.totalAmount} AVAX (80% to company, 20% to token holders)`, 
+          time: new Date().toLocaleTimeString() 
+        }]);
+        
+        if (result.transactionHash) {
+          setAgentActivity(prev => [...prev, { 
+            agent: 'Smart Contract', 
+            action: `📋 Transaction: ${result.transactionHash}`, 
+            time: new Date().toLocaleTimeString() 
+          }]);
+        }
+      } else {
+        setAgentActivity(prev => [...prev, { 
+          agent: 'Finance Agent', 
+          action: `❌ Revenue distribution failed: ${result.error}`, 
+          time: new Date().toLocaleTimeString() 
+        }]);
+      }
+
+    } catch (error) {
+      console.error('Revenue distribution error:', error);
+      setAgentActivity(prev => [...prev, { 
+        agent: 'Finance Agent', 
+        action: `❌ Error: ${error.message}`, 
+        time: new Date().toLocaleTimeString() 
+      }]);
     }
-    
-    // Use the new function with current state
-    createBoltPromptWithData(currentIdea, product, research, marketingStrategy, technicalStrategy);
   };
+
+  // createBoltPrompt fallback function removed - using createBoltPromptWithData directly
 
   const getBoltUrl = () => {
     const promptText = boltPrompt?.bolt_prompt ||
@@ -502,11 +543,29 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>AI Company - Token Holder Dashboard</h1>
+        <h1>AI Company - Zero-Man Organization</h1>
         <p style={{ color: '#6b7280', fontSize: '0.875rem', margin: 0 }}>Token Holder ID: {tokenHolderId}</p>
+        
+        {/* Tab Navigation */}
+        <div className="tab-navigation">
+          <button 
+            className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setActiveTab('dashboard')}
+          >
+            🤖 Agent Dashboard
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'revenue' ? 'active' : ''}`}
+            onClick={() => setActiveTab('revenue')}
+          >
+            💰 Revenue Dashboard
+          </button>
+        </div>
       </header>
 
       <main className="main-content">
+        {activeTab === 'dashboard' && (
+          <div className="dashboard-content">
         <div className="controls">
           <button 
             onClick={generateIdeas} 
@@ -717,6 +776,12 @@ function App() {
               Please wait while we generate something amazing!
             </p>
           </div>
+        )}
+          </div>
+        )}
+
+        {activeTab === 'revenue' && (
+          <RevenueDashboard />
         )}
       </main>
 

@@ -328,34 +328,107 @@
   100% { opacity: 1; transform: scale(1); }
 }
 
-/* Activity Summary */
+/* Activity Summary - Terminal Hacker Vibe */
 .activity-summary {
-  background: #f8fafc;
+  background: #0a0a0a;
   border-radius: 8px;
-  padding: 16px;
+  padding: 20px;
+  border: 2px solid #00ff41;
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Courier New', monospace;
+  position: relative;
+  overflow: hidden;
+}
+
+.activity-summary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #00ff41, #00cc33, #00ff41);
+  animation: scanline 2s linear infinite;
+}
+
+@keyframes scanline {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 .activity-summary h4 {
-  margin: 0 0 12px 0;
-  color: #374151;
-  font-size: 0.875rem;
-  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: #00ff41;
+  font-size: 1rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px #00ff41;
+  position: relative;
+}
+
+.activity-summary h4::before {
+  content: '> ';
+  color: #00ff41;
+  font-weight: bold;
+}
+
+.activity-summary h4::after {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 12px;
+  background: #00ff41;
+  margin-left: 8px;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
 
 .activity-list {
-  max-height: 120px;
+  max-height: 200px;
   overflow-y: auto;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  padding: 12px;
+  border: 1px solid #003d0f;
+}
+
+.activity-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.activity-list::-webkit-scrollbar-track {
+  background: #000;
+}
+
+.activity-list::-webkit-scrollbar-thumb {
+  background: #00ff41;
+  border-radius: 4px;
 }
 
 .activity-item {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-  font-size: 0.75rem;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 8px 0;
+  border-bottom: 1px solid #003d0f;
+  font-size: 0.875rem;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .activity-item:last-child {
@@ -363,20 +436,41 @@
 }
 
 .activity-item .agent-name {
-  color: #dc2626;
-  font-weight: 600;
-  min-width: 80px;
+  color: #00ff41;
+  font-weight: 700;
+  min-width: 120px;
+  text-shadow: 0 0 5px #00ff41;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.activity-item .agent-name::before {
+  content: '[';
+  color: #00cc33;
+}
+
+.activity-item .agent-name::after {
+  content: ']';
+  color: #00cc33;
 }
 
 .activity-item .action {
   flex: 1;
-  color: #4a5568;
+  color: #cccccc;
+  text-shadow: 0 0 2px #cccccc;
+  margin: 0 12px;
 }
 
 .activity-item .time {
-  color: #9ca3af;
+  color: #00aa33;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-shadow: 0 0 3px #00aa33;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.activity-item .time::before {
+  content: '@';
+  margin-right: 2px;
 }
 
 /* Responsive Design */

@@ -189,7 +189,7 @@ const AgentFlow = ({
 
       {/* Recent Activity Log */}
       <div className="activity-summary">
-        <h4>Recent Activity</h4>
+        <h4>System Activity Log</h4>
         <div className="activity-list">
           {agentActivity.slice(-3).reverse().map((activity, index) => (
             <div key={index} className="activity-item">

@@ -58,6 +58,16 @@ npm run client
 
 ## 🔧 Recent Updates & Fixes
 
+### Phase 2: Revenue Integration (September 2025)
+- ✅ **Smart Contract Integration**: Connected Avalanche AVAX Dividend Distributor contract
+- ✅ **Automated Revenue Distribution**: 80% to company, 20% to token holders on project completion
+- ✅ **Finance Agent**: New AI agent that handles revenue analysis and distribution
+- ✅ **Revenue Dashboard**: Real-time tracking of dividends, distributions, and token holders
+- ✅ **Web3 Service**: Complete blockchain integration with ethers.js
+- ✅ **Database Schema**: Revenue tracking, token holders, and project completions
+- ✅ **API Endpoints**: Full finance management REST API
+- ✅ **Frontend Integration**: Tabbed interface with Agent Dashboard and Revenue Dashboard
+
 ### Agent Flow Fixes (September 2025)
 - ✅ **Fixed 404 Error**: Resolved server endpoint issues causing agent communication failures
 - ✅ **Complete Agent Flow**: Fixed workflow to properly trigger all agents in sequence:
@@ -85,9 +95,11 @@ CEO Agent (Idea Generation & Product Validation)
 ├── Product Agent (Product Development)
 ├── CMO Agent (Marketing Strategy)
 │   └── Marketing Agent (Campaign Execution)
-└── CTO Agent (Technical Strategy)
-    └── Head of Engineering Agent (Bolt Prompt Creation)
-        └── Developer Agent (Bolt.diy Integration)
+├── CTO Agent (Technical Strategy)
+│   └── Head of Engineering Agent (Bolt Prompt Creation)
+│       └── Developer Agent (Bolt.diy Integration)
+└── Finance Agent (Revenue Distribution & Analysis)
+    └── Smart Contract (Automated Profit Sharing)
 ```
 
 ## 🛠️ Features
@@ -96,9 +108,13 @@ CEO Agent (Idea Generation & Product Validation)
 - **CEO Agent**: Generates business ideas using Claude API
 - **Research Agent**: Market research and competitive analysis
 - **Product Agent**: Product concept development
-- **Token Holder Dashboard**: Voting and approval interface
-- **Database**: SQLite storage for all data
-- **API Server**: RESTful API for agent communication
+- **Finance Agent**: Revenue analysis and automated distribution
+- **Token Holder Dashboard**: Voting and approval interface with revenue tracking
+- **Revenue Dashboard**: Real-time dividend tracking and smart contract monitoring
+- **Smart Contract Integration**: Avalanche AVAX Dividend Distributor
+- **Web3 Service**: Blockchain interaction with automated profit sharing
+- **Database**: SQLite storage for all data including revenue tracking
+- **API Server**: RESTful API for agent communication and finance management
 
 ### 🚧 Coming Soon
 - **Coding Agents**: Website development with Bolt integration
@@ -149,6 +165,17 @@ team-zero/
 - `GET /api/tokens/votes/:itemType/:itemId` - Get votes for item
 - `GET /api/tokens/summary/:itemType/:itemId` - Get voting summary
 
+### Finance
+- `POST /api/finance/distribute-revenue` - Distribute revenue for completed project
+- `POST /api/finance/analyze-revenue/:ideaId` - Analyze revenue projection
+- `GET /api/finance/report` - Generate financial report
+- `GET /api/finance/contract-info` - Get smart contract information
+- `GET /api/finance/revenue-history` - Get revenue distribution history
+- `GET /api/finance/token-holders` - Get token holder information
+- `POST /api/finance/token-holders` - Add new token holder
+- `GET /api/finance/dividend-info/:address` - Get dividend info for address
+- `POST /api/finance/complete-project` - Mark project as complete and distribute revenue
+
 ## 🎮 Usage
 
 1. **Start the system** (see Quick Start above)
@@ -158,13 +185,45 @@ team-zero/
 5. **Automatic workflow**: 
    - CEO generates idea → Token holder approves → Research Agent researches
    - Research completes → Product Agent develops concept → Token holder approves
+   - Marketing & Technical strategies → Website development prompt created
+   - **Revenue Distribution**: Finance Agent automatically distributes profits when projects complete
 6. **Monitor progress**: All agent activities are displayed in real-time
+7. **Track revenue**: Switch to Revenue Dashboard to see dividend distributions and token holder rewards
+
+## 💰 Revenue Integration
+
+### How Automated Profit Sharing Works
+
+1. **Project Completion**: When AI agents complete projects (websites, marketing campaigns, etc.)
+2. **Revenue Calculation**: Finance Agent calculates estimated revenue based on project complexity
+3. **Smart Contract Distribution**: 
+   - 80% goes to company wallet (operational costs, development)
+   - 20% distributed proportionally to all token holders as dividends
+4. **Blockchain Recording**: All transactions recorded on Avalanche blockchain
+5. **Real-time Tracking**: Revenue Dashboard shows live dividend balances and distribution history
+
+### Revenue Sources
+- **Website Deployments**: 0.1 AVAX base + complexity bonuses
+- **Marketing Campaigns**: 0.05 AVAX base + channel bonuses  
+- **Product Launches**: 0.2 AVAX base + feature bonuses
+- **Custom Projects**: Variable based on scope and value
+
+### Token Holder Benefits
+- **Automatic Dividends**: Receive AVAX proportional to token holdings
+- **No Manual Claims**: Pull-based system - claim dividends when ready
+- **Transparent Tracking**: View all distributions on blockchain explorer
+- **Governance Rights**: Vote on AI agent decisions and company direction
 
 ## 🔑 Environment Variables
 
 ```bash
 # Required
 CLAUDE_API_KEY=your_claude_api_key_here
+
+# Web3 Configuration (Required for Revenue Distribution)
+PRIVATE_KEY=your_avalanche_wallet_private_key_here
+CONTRACT_ADDRESS=0x0471AaD869eBa890d63A2f276828879A9a375858
+AVALANCHE_RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
 
 # Optional
 PORT=5000
@@ -230,6 +289,7 @@ NODE_ENV=development npm start
 - **Removed Sidebar**: Eliminated left sidebar with chat history, user info, and navigation for cleaner, focused interface
 - **Agent-Only Interface**: Removed input box and export functionality - designed for programmatic AI agent interaction only
 - **Simplified Toolbar**: Removed Sync button, replaced Toggle Terminal with Deploy button for streamlined workflow
+- **Terminal Hacker UI**: Enhanced Recent Activity section with green terminal styling, scanline effects, and indie hacker vibe
 
 ### Modified Files
 - `bolt.diy-main/app/lib/modules/llm/registry.ts` - Removed all providers except Anthropic

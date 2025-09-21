@@ -5,7 +5,7 @@ class ClaudeAgent {
     this.name = name;
     this.role = role;
     this.apiKey = apiKey;
-    this.model = process.env.CLAUDE_MODEL || 'claude-3-5-sonnet-20241022';
+    this.model = process.env.CLAUDE_MODEL || 'claude-3-haiku-20240307';
   }
 
   async generateResponse(prompt, maxTokens = 1000) {

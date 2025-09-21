@@ -16,7 +16,9 @@
     "sqlite3": "^5.1.6",
     "axios": "^1.6.0",
     "ws": "^8.14.2",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "ethers": "^6.8.0",
+    "web3": "^4.2.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

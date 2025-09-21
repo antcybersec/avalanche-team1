@@ -96,6 +96,51 @@ db.serialize(() => {
       FOREIGN KEY (idea_id) REFERENCES ideas (id)
     )
   `);
+
+  // Revenue tracking table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS revenue_distributions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id TEXT,
+      project_type TEXT, -- 'idea', 'product', 'website'
+      revenue_amount REAL,
+      owner_share REAL,
+      dividend_share REAL,
+      transaction_hash TEXT,
+      block_number INTEGER,
+      status TEXT DEFAULT 'pending', -- 'pending', 'completed', 'failed'
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Token holders table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS token_holders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      wallet_address TEXT UNIQUE,
+      token_balance REAL DEFAULT 0,
+      total_dividends_earned REAL DEFAULT 0,
+      last_dividend_claim DATETIME,
+      joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Project completions table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS project_completions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      idea_id INTEGER,
+      completion_type TEXT, -- 'website_deployed', 'marketing_completed', 'product_launched'
+      estimated_revenue REAL,
+      actual_revenue REAL,
+      revenue_distributed BOOLEAN DEFAULT 0,
+      completion_data TEXT,
+      completed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (idea_id) REFERENCES ideas (id)
+    )
+  `);
 });
 
 console.log('Database initialized successfully');

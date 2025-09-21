@@ -23,11 +23,16 @@ app.use(express.static(path.join(__dirname, 'client/build')));
 const agentRoutes = require('./routes/agents');
 const ideaRoutes = require('./routes/ideas');
 const tokenRoutes = require('./routes/tokens');
+const financeRoutes = require('./routes/finance');
+
+// Import Web3 service to initialize
+const web3Service = require('./services/web3Service');
 
 // Routes
 app.use('/api/agents', agentRoutes);
 app.use('/api/ideas', ideaRoutes);
 app.use('/api/tokens', tokenRoutes);
+app.use('/api/finance', financeRoutes);
 
 // Serve React app
 app.get('*', (req, res) => {
