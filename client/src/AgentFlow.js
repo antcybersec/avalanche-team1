@@ -21,8 +21,8 @@ const AgentFlow = ({
     { id: 'cmo', name: 'CMO Agent', subtitle: 'Marketing Strategy', icon: '📢', position: 'right' },
     { id: 'cto', name: 'CTO Agent', subtitle: 'Technical Planning', icon: '⚙️', position: 'bottom-left' },
     { id: 'head-eng', name: 'Head of Engineering', subtitle: 'Bolt Prompt Creation', icon: '🎯', position: 'bottom-center' },
-    { id: 'marketing', name: 'Marketing Agent', subtitle: 'Campaign Execution', icon: '🎯', position: 'bottom-right' },
-    { id: 'developer', name: 'Developer Agent', subtitle: 'Frontend/Backend/Deploy', icon: '💻', position: 'bottom-right-2' }
+    { id: 'marketing', name: 'Marketing Agent', subtitle: marketingStrategy ? 'Work in Progress' : 'Campaign Execution', icon: '🎯', position: 'bottom-right' },
+    { id: 'developer', name: 'Developer Agent', subtitle: boltPrompt ? 'Work in Progress' : 'Website Development', icon: '💻', position: 'bottom-right-2' }
   ];
 
   // Determine agent states based on current activity and workflow progress
@@ -46,9 +46,9 @@ const AgentFlow = ({
       case 'head-eng':
         return boltPrompt ? 'completed' : (marketingStrategy && technicalStrategy) ? 'waiting' : 'waiting';
       case 'marketing':
-        return marketingStrategy ? 'waiting' : product ? 'waiting' : 'waiting';
+        return marketingStrategy ? 'active' : product ? 'waiting' : 'waiting';
       case 'developer':
-        return boltPrompt ? 'waiting' : 'waiting';
+        return boltPrompt ? 'active' : 'waiting';
       default:
         return 'waiting';
     }
@@ -104,7 +104,7 @@ const AgentFlow = ({
             return (
               <div 
                 key={agent.id} 
-                className={`agent-card ${state} ${agent.position} ${isClickable ? 'clickable' : ''}`}
+                className={`agent-card ${state} ${agent.position} ${isClickable ? 'clickable' : ''} ${agent.id === 'developer' ? 'developer-agent' : ''} ${agent.id === 'marketing' ? 'marketing-agent' : ''}`}
                 onClick={isClickable ? () => {
                   if (agent.id === 'marketing') {
                     onStartMarketing();
@@ -119,11 +119,11 @@ const AgentFlow = ({
                 </div>
                 <div className="agent-info">
                   <h4>{agent.name}</h4>
-                  <p>{agent.subtitle}</p>
+                  <p className={(agent.id === 'developer' && boltPrompt) || (agent.id === 'marketing' && marketingStrategy) ? 'work-in-progress' : ''}>{agent.subtitle}</p>
                 </div>
                 <div className={`agent-status ${state}`}>
-                  {state === 'active' && agent.id === 'marketing' && 'Click to Execute'}
-                  {state === 'active' && agent.id === 'developer' && 'Click to Build'}
+                  {state === 'active' && agent.id === 'marketing' && 'Active'}
+                  {state === 'active' && agent.id === 'developer' && 'Active'}
                   {state === 'active' && agent.id !== 'marketing' && agent.id !== 'developer' && 'Working'}
                   {state === 'completed' && 'Complete'}
                   {state === 'waiting' && 'Waiting'}
@@ -131,7 +131,7 @@ const AgentFlow = ({
                 {isClickable && (
                   <div className="click-indicator">
                     {agent.id === 'marketing' && '👆 Click to start campaigns'}
-                    {agent.id === 'developer' && '👆 Click to open Bolt'}
+                    {agent.id === 'developer' && '👆 Click to open Developer agent'}
                   </div>
                 )}
               </div>

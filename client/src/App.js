@@ -228,7 +228,7 @@ function App() {
           }]);
           setAgentActivity(prev => [...prev, { 
             agent: 'Marketing Agent', 
-            action: 'Received marketing strategy. Ready to execute campaigns!', 
+            action: 'Work in Progress - Click to check marketing agent', 
             time: new Date().toLocaleTimeString() 
           }]);
         }, 1000);
@@ -270,7 +270,7 @@ function App() {
           }]);
           setAgentActivity(prev => [...prev, { 
             agent: 'Head of Engineering', 
-            action: 'Creating Bolt prompt for website development...', 
+            action: 'Creating developer prompt for website development...', 
             time: new Date().toLocaleTimeString() 
           }]);
           createBoltPromptWithData(ideaData, productData, researchData, cmoData.strategy, ctoData.strategy);
@@ -354,12 +354,12 @@ function App() {
         }]);
         setAgentActivity(prev => [...prev, { 
           agent: 'Developer Agent', 
-          action: 'Received development prompt. Ready to build website!', 
+          action: 'Work in Progress - Click to check developer agent', 
           time: new Date().toLocaleTimeString() 
         }]);
         setAgentActivity(prev => [...prev, { 
           agent: '🎯 Final Stage', 
-          action: 'Website development prompt ready! Click to open Bolt.diy!', 
+          action: 'Website development prompt ready! Click developer agent to start building!', 
           time: new Date().toLocaleTimeString() 
         }]);
         
@@ -695,55 +695,9 @@ function App() {
               {boltPrompt && (
                 <div className="workflow-complete">
                   <div className="workflow-status">
-                    <span className="status-text">✅ Website Development Prompt Ready - Click Developer Agent above to build</span>
+                    <span className="status-text">✅ Website Development Prompt Ready - Click Developer Agent to check progress!</span>
                   </div>
                   
-                  {/* Bolt Prompt Details */}
-                  <div className="bolt-prompt-section">
-                    <h3>🏗️ Website Development Prompt (Head of Engineering)</h3>
-                    <div className="bolt-prompt-content">
-                      <div className="prompt-header">
-                        <h4>📋 Website: {boltPrompt.website_title}</h4>
-                        <p>{boltPrompt.website_description}</p>
-                      </div>
-                      
-                      <div className="prompt-details">
-                        <div className="detail-section">
-                          <h5>📄 Pages Required:</h5>
-                          <ul>
-                            {boltPrompt.pages_required?.map((page, index) => (
-                              <li key={index}>{page}</li>
-                            ))}
-                          </ul>
-                        </div>
-                        
-                        <div className="detail-section">
-                          <h5>⚙️ Functional Requirements:</h5>
-                          <ul>
-                            {boltPrompt.functional_requirements?.map((req, index) => (
-                              <li key={index}>{req}</li>
-                            ))}
-                          </ul>
-                        </div>
-                        
-                        <div className="detail-section">
-                          <h5>🎨 Design Specifications:</h5>
-                          <div className="design-specs">
-                            <p><strong>Color Scheme:</strong> {JSON.stringify(boltPrompt.design_specifications?.color_scheme)}</p>
-                            <p><strong>Typography:</strong> {JSON.stringify(boltPrompt.design_specifications?.typography)}</p>
-                            <p><strong>Layout:</strong> {boltPrompt.design_specifications?.layout_style}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="detail-section">
-                          <h5>🚀 Bolt Prompt:</h5>
-                          <div className="bolt-prompt-text">
-                            {boltPrompt.bolt_prompt}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               )}
             </div>

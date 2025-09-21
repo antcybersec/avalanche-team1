@@ -186,6 +186,30 @@
   font-size: 0.75rem;
 }
 
+/* Special styling for Developer Agent Work in Progress */
+.agent-info p.work-in-progress {
+  color: #f59e0b;
+  font-weight: 600;
+  background: #fef3c7;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #fbbf24;
+}
+
+/* Override active state for Developer Agent to use yellow/orange instead of red */
+.agent-card.active.developer-agent {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+/* Override active state for Marketing Agent to use yellow/orange instead of red */
+.agent-card.active.marketing-agent {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
 .agent-status {
   padding: 4px 12px;
   border-radius: 20px;
