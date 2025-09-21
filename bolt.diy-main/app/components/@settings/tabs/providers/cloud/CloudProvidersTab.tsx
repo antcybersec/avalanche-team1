@@ -16,47 +16,16 @@ import { FaCloud, FaBrain } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
 
 // Add type for provider names to ensure type safety
-type ProviderName =
-  | 'AmazonBedrock'
-  | 'Anthropic'
-  | 'Cohere'
-  | 'Deepseek'
-  | 'Github'
-  | 'Google'
-  | 'Groq'
-  | 'HuggingFace'
-  | 'Hyperbolic'
-  | 'Mistral'
-  | 'OpenAI'
-  | 'OpenRouter'
-  | 'Perplexity'
-  | 'Together'
-  | 'XAI';
+type ProviderName = 'Anthropic';
 
 // Update the PROVIDER_ICONS type to use the ProviderName type
 const PROVIDER_ICONS: Record<ProviderName, IconType> = {
-  AmazonBedrock: SiAmazon,
   Anthropic: FaBrain,
-  Cohere: BiChip,
-  Deepseek: BiCodeBlock,
-  Github: SiGithub,
-  Google: SiGoogle,
-  Groq: BsCloud,
-  HuggingFace: SiHuggingface,
-  Hyperbolic: TbCloudComputing,
-  Mistral: TbBrain,
-  OpenAI: SiOpenai,
-  OpenRouter: FaCloud,
-  Perplexity: SiPerplexity,
-  Together: BsCloud,
-  XAI: BsRobot,
 };
 
 // Update PROVIDER_DESCRIPTIONS to use the same type
 const PROVIDER_DESCRIPTIONS: Partial<Record<ProviderName, string>> = {
-  Anthropic: 'Access Claude and other Anthropic models',
-  Github: 'Use OpenAI models hosted through GitHub infrastructure',
-  OpenAI: 'Use GPT-4, GPT-3.5, and other OpenAI models',
+  Anthropic: 'Access Claude 3.7 Sonnet - the most advanced AI model with hybrid reasoning',
 };
 
 const CloudProvidersTab = () => {

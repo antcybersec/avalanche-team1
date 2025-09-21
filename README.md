@@ -217,6 +217,30 @@ NODE_ENV=development npm start
 - Added terminal-style monospace fonts for agent activity
 - Improved responsive design and accessibility
 
+## 🛠️ Bolt.diy Integration & Customization
+
+### Recent Customizations
+- **Streamlined AI Models**: Removed all AI providers except Anthropic for focused development experience
+- **Claude 3.7 Sonnet Integration**: Updated to use the latest Claude 3.7 Sonnet (claude-3-7-sonnet-20250219) with hybrid reasoning capabilities
+- **Simplified Provider UI**: Updated settings interface to only show Anthropic with clear model description
+- **Enhanced Performance**: Disabled dynamic model loading to ensure consistent Claude 3.7 Sonnet usage
+- **Cleaned UI Interface**: Removed Import Chat, Import Folder, and Clone a repo buttons for streamlined developer agent experience
+- **Updated Welcome Text**: Changed main heading to "Developer Agent" and description to focus on development assistance
+- **Custom Branding**: Replaced Bolt.diy logo with "team zero" in stylized gradient design
+- **Removed Sidebar**: Eliminated left sidebar with chat history, user info, and navigation for cleaner, focused interface
+- **Agent-Only Interface**: Removed input box and export functionality - designed for programmatic AI agent interaction only
+- **Simplified Toolbar**: Removed Sync button, replaced Toggle Terminal with Deploy button for streamlined workflow
+
+### Modified Files
+- `bolt.diy-main/app/lib/modules/llm/registry.ts` - Removed all providers except Anthropic
+- `bolt.diy-main/app/lib/modules/llm/providers/anthropic.ts` - Updated to Claude 3.7 Sonnet only
+- `bolt.diy-main/app/components/@settings/tabs/providers/cloud/CloudProvidersTab.tsx` - Simplified UI
+- `bolt.diy-main/app/components/chat/BaseChat.tsx` - Updated welcome text and removed import buttons
+- `bolt.diy-main/app/components/header/Header.tsx` - Replaced logo with "team zero" branding
+
+### Developer Agent Integration
+When the Head of Engineering creates a development prompt, the Developer Agent becomes clickable and opens Bolt.diy with the generated prompt, now powered exclusively by Claude 3.7 Sonnet for consistent, high-quality code generation.
+
 ## 📝 Development Notes
 
 - All agent communication uses Claude API
@@ -225,6 +249,7 @@ NODE_ENV=development npm start
 - API uses Express.js with CORS enabled
 - Token holder system is basic voting mechanism
 - UI follows modern design principles with terminal-inspired agent activity section
+- Bolt.diy integration uses Claude 3.7 Sonnet for website development
 
 ## 🤝 Contributing
 
