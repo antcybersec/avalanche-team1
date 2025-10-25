@@ -8,6 +8,30 @@ A revolutionary AI-only company with hierarchical AI agents and token holder gov
 - Node.js (v14 or higher)
 - Claude API key from Anthropic
 
+## 🔗 Blockchain Integration
+
+### Avalanche Smart Contracts
+- **Location**: `smartcontracts/` directory
+- **Contract**: `AVAXDividendDistributor.sol`
+- **Function**: Distributes 20% of incoming AVAX to token holders, 80% to owner
+- **Network**: Avalanche Fuji Testnet (Chain ID: 43113)
+
+### Monad Smart Contracts (NEW!)
+- **Location**: `monad-smartcontracts/` directory  
+- **Contract**: `MONDividendDistributor.sol`
+- **Function**: Distributes 20% of incoming MON to token holders, 80% to owner
+- **Network**: Monad Testnet (when available)
+- **Benefits**: 10,000 TPS, 400ms block times, low gas fees
+
+### Testing Monad Contracts
+```bash
+cd monad-smartcontracts
+npm install
+npm test                    # Run all tests
+npm run test:contract       # Test contract interaction
+npm run deploy:testnet      # Deploy to Monad testnet (when available)
+```
+
 ### Installation
 
 1. **Clone and setup:**
